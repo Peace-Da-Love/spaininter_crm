@@ -1,0 +1,1 @@
+export { CreateNewsPage } from "./view";
