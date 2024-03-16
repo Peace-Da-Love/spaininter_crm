@@ -4,19 +4,23 @@ import { CircularProgress } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { LoginDto, loginModel } from "./model.ts";
 import Cookies from "js-cookie";
+import { useToast } from "@/shared/hooks";
 
 export const AuthPage = () => {
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
+	const toast = useToast();
 	const { mutate } = useMutation({
 		mutationFn: (dto: LoginDto) => loginModel(dto),
 		onSuccess: data => {
 			const accessToken = data.data.data.accessToken;
-      Cookies.set("access_token", accessToken);
+			Cookies.set("access_token", accessToken);
+			toast.success("Login successful");
 			navigate("/");
 		},
-		onError: error => {
-			console.log(error);
+		onError: () => {
+			toast.error("Login failed");
+			navigate("/login");
 		}
 	});
 

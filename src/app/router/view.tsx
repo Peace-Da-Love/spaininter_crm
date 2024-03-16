@@ -4,7 +4,7 @@ import { PageLayout } from "@/shared/ui/layouts/page-layout";
 import { AuthPage } from "@/pages/auth";
 import { AuthRoute } from "./privat-routes";
 import { LoginPage } from "@/pages/login";
-import { PanelLayout } from "@/shared/ui/layouts/panel-layout/view.tsx";
+import { PanelLayout } from "@/widgets/panel-layout/view.tsx";
 import { NewsPage } from "@/pages/news";
 import { CreateNewsPage } from "@/pages/create-news";
 import { AdminsPage } from "@/pages/admins";
