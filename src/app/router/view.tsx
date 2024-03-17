@@ -8,6 +8,7 @@ import { PanelLayout } from "@/widgets/panel-layout/view.tsx";
 import { NewsPage } from "@/pages/news";
 import { CreateNewsPage } from "@/pages/create-news";
 import { AdminsPage } from "@/pages/admins";
+import { NotFoundPage } from "@/pages/not-found";
 
 export const Router = () => {
 	return (
@@ -24,6 +25,7 @@ export const Router = () => {
 					</Route>
 					<Route path={"/auth"} element={<AuthPage />} />
 					<Route path={"/login"} element={<LoginPage />} />
+					<Route path={"*"} element={<NotFoundPage />} />
 				</Route>
 			</Routes>
 		</BrowserRouter>
