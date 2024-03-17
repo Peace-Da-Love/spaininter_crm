@@ -98,7 +98,7 @@ export const ImageDropZone: FC<Props> = ({ handleImageLink }) => {
 					<Typography gutterBottom>Image preview</Typography>
 					<Box
 						sx={{
-							width: "500px",
+							width: "100%",
 							paddingTop: "100%",
 							overflow: "hidden",
 							position: "relative",
