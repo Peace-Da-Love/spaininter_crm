@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+Sitemap: https://crm.spaininter.com/sitemap.xml
