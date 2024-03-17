@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { newsModel } from "./model.ts";
 import { formatDateTime } from "@/shared/utils";
-import { Box, Skeleton, TablePagination } from "@mui/material";
+import { Box, Skeleton, TableContainer, TablePagination } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 
 export const NewsTable = () => {
@@ -57,8 +57,8 @@ export const NewsTable = () => {
 	});
 
 	return (
-		<Paper sx={{ width: "100%", boxShadow: "none" }}>
-			<Table>
+		<TableContainer component={Paper} sx={{ boxShadow: "none" }}>
+			<Table sx={{ minWidth: 650 }}>
 				<TableHead>
 					<TableRow>
 						<TableCell>ID</TableCell>
@@ -103,6 +103,6 @@ export const NewsTable = () => {
 					onPageChange={handleChangePage}
 				/>
 			)}
-		</Paper>
+		</TableContainer>
 	);
 };
