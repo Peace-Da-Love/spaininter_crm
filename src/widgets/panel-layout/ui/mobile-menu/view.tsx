@@ -68,6 +68,7 @@ export const MobileMenu = () => {
 					<List sx={{ display: "flex", padding: 0, flexDirection: "column" }}>
 						<ListItem>
 							<Link
+								onClick={toggleDrawer(false)}
 								sx={{
 									textDecoration: pathname === "/news" ? "underline" : "none"
 								}}
@@ -79,6 +80,7 @@ export const MobileMenu = () => {
 						</ListItem>
 						<ListItem>
 							<Link
+								onClick={toggleDrawer(false)}
 								sx={{
 									textDecoration: pathname === "/admins" ? "underline" : "none"
 								}}
