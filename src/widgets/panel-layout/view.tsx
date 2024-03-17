@@ -12,6 +12,7 @@ import logo from "@/app/assets/images/logo.png";
 import { pxToRem } from "@/shared/css-utils";
 import { Link as RouterLink } from "react-router-dom";
 import { LogOut } from "@/features/log-out";
+import { MobileMenu } from "@/widgets/panel-layout/ui/mobile-menu";
 
 export const PanelLayout = () => {
 	const location = useLocation();
@@ -56,7 +57,7 @@ export const PanelLayout = () => {
 						</Box>
 						<Typography fontWeight={600}>Site management</Typography>
 					</Link>
-					<Box sx={{ display: "flex", gap: pxToRem(30) }}>
+					<Box sx={{ display: { xs: "none", sm: "flex" }, gap: pxToRem(30) }}>
 						<List sx={{ display: "flex", padding: 0 }}>
 							<ListItem>
 								<Link
@@ -81,21 +82,10 @@ export const PanelLayout = () => {
 									Admins
 								</Link>
 							</ListItem>
-							{/*<ListItem>*/}
-							{/*	<Link*/}
-							{/*		sx={{*/}
-							{/*			textDecoration:*/}
-							{/*				pathname === "/categories" ? "underline" : "none"*/}
-							{/*		}}*/}
-							{/*		component={RouterLink}*/}
-							{/*		to='categories'*/}
-							{/*	>*/}
-							{/*		Categories*/}
-							{/*	</Link>*/}
-							{/*</ListItem>*/}
 						</List>
 						<LogOut />
 					</Box>
+					<MobileMenu />
 				</Container>
 			</HeaderStyles>
 			<MainStyles>
