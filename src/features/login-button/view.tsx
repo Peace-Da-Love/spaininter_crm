@@ -1,19 +1,20 @@
 import { Link as RouterLink } from "react-router-dom";
-import { Link } from "@mui/material";
+import { Button } from "@mui/material";
 import IcTelegram from "@/app/assets/icons/ic_telegram.svg?react";
 import { pxToRem } from "@/shared/css-utils";
 
 export const LoginButton = () => {
 	const AUTH_URL = import.meta.env.VITE_AUTH_URL;
 	return (
-		<Link
+		<Button
 			sx={{
 				display: "inline-flex",
 				alignItems: "center",
 				gap: pxToRem(10),
-				background: "#F5F3F8",
-				color: "#AFB6BE",
+				background: "rgba(20,119,215,0.1)",
+				color: "#151515",
 				textDecoration: "none",
+				textTransform: "none",
 				padding: `${pxToRem(12)} ${pxToRem(40)}`,
 				borderRadius: pxToRem(10),
 				fontSize: pxToRem(16),
@@ -24,6 +25,6 @@ export const LoginButton = () => {
 			component={RouterLink}
 		>
 			<IcTelegram /> Telegram
-		</Link>
+		</Button>
 	);
 };
