@@ -30,12 +30,20 @@ export const useNewsValidation = () => {
 			const translation = news.translations?.find(
 				translation => translation.language_id === lang.language_id
 			);
-			if (translation?.title?.length === 0 || news.translations?.length === 0) {
+			if (
+				translation?.title?.length === 0 ||
+				news.translations?.length === 0 ||
+				!translation
+			) {
 				errors.title
 					? errors.title.push(`Title is required for ${lang.language_code} `)
 					: (errors.title = [`Title is required for ${lang.language_code} `]);
 			}
-			if (translation?.description?.length === 0) {
+			if (
+				translation?.description?.length === 0 ||
+				news.translations?.length === 0 ||
+				!translation
+			) {
 				errors.description
 					? errors.description.push(
 							`Description is required for ${lang.language_code} `
@@ -44,7 +52,11 @@ export const useNewsValidation = () => {
 							`Description is required for ${lang.language_code} `
 						]);
 			}
-			if (translation?.content?.length === 0) {
+			if (
+				translation?.content?.length === 0 ||
+				news.translations?.length === 0 ||
+				!translation
+			) {
 				errors.content
 					? errors.content.push(
 							`Content is required for ${lang.language_code} `

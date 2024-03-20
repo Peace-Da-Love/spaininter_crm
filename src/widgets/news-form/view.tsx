@@ -15,7 +15,7 @@ import {
 	TextField
 } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 import { ImageDropZone } from "@/features/image-drop-zone";
 import { useNewsValidation } from "@/widgets/news-form/hooks";
@@ -26,7 +26,7 @@ import { useToast } from "@/shared/hooks";
 import { useNavigate } from "react-router-dom";
 
 export const NewsForm = () => {
-	const { currentLanguageId, setCurrentLanguageId, setNews, news, languages } =
+	const { currentLanguageId, setCurrentLanguageId, setNews, news } =
 		useNewsStore();
 	const navigate = useNavigate();
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
@@ -70,23 +70,6 @@ export const NewsForm = () => {
 				]
 			});
 		}
-		setNews({
-			...news,
-			translations: languages.map(lang => {
-				const translation = news.translations?.find(
-					translation => translation.language_id === lang.language_id
-				);
-				if (translation) {
-					return translation;
-				}
-				return {
-					language_id: lang.language_id,
-					title: "",
-					description: "",
-					content: ""
-				};
-			})
-		});
 
 		if (mdxEditorRef.current) {
 			mdxEditorRef.current.setMarkdown(
@@ -96,6 +79,22 @@ export const NewsForm = () => {
 			);
 		}
 	}, [currentLanguageId]);
+
+	useEffect(() => {
+		// setNews({
+		// 	...news,
+		// 	translations: languages.map(language => {
+		// 		return {
+		// 			language_id: language.language_id,
+		// 			title: null,
+		// 			description: null,
+		// 			content: null
+		// 		};
+		// 	})
+		// });
+
+		console.log(news);
+	}, []);
 
 	const handleCategoryChange = (event: SelectChangeEvent) => {
 		const {
@@ -248,7 +247,12 @@ export const NewsForm = () => {
 				<DialogContent>
 					<DialogContentText id='alert-dialog-description'>
 						{Object.keys(errors).map(key => {
-							return <div key={key}>{errors[key]}</div>;
+							return (
+								<Fragment key={key}>
+									<span>{errors[key]}</span>
+									<br />
+								</Fragment>
+							);
 						})}
 					</DialogContentText>
 				</DialogContent>
