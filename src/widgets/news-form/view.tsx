@@ -1,37 +1,37 @@
-import { MarkdownEditor } from "@/features/markdown-editor";
-import { LanguageSelection } from "@/features/language-selection";
-import { SelectCategory } from "@/features/select-category";
-import { useNewsStore } from "@/app/store";
-import { SelectChangeEvent } from "@mui/material/Select/SelectInput";
 import {
 	Box,
 	Button,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogContentText,
-	DialogTitle,
-	TextField
+	TextField,
+	Typography
 } from "@mui/material";
-import { pxToRem } from "@/shared/css-utils";
-import { Fragment, useEffect, useRef, useState } from "react";
-import { MDXEditorMethods } from "@mdxeditor/editor";
-import { ImageDropZone } from "@/features/image-drop-zone";
-import { useNewsValidation } from "@/widgets/news-form/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { INews } from "@/app/types";
 import { newsModel } from "@/app/models/news-model";
 import { useToast } from "@/shared/hooks";
 import { useNavigate } from "react-router-dom";
+import {
+	Controller,
+	SubmitHandler,
+	useFieldArray,
+	useForm
+} from "react-hook-form";
+import { z } from "zod";
+import { schema } from "./model.ts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SelectCategory } from "@/features/select-category";
+import { LanguageSelection } from "@/features/language-selection";
+import { ImageDropZone } from "@/features/image-drop-zone";
+import { useRef, useState } from "react";
+import { MDXEditorMethods } from "@mdxeditor/editor";
+import { MarkdownEditor } from "@/features/markdown-editor";
+import { useLanguagesStore } from "@/app/store";
 
 export const NewsForm = () => {
-	const { currentLanguageId, setCurrentLanguageId, setNews, news } =
-		useNewsStore();
 	const navigate = useNavigate();
-	const mdxEditorRef = useRef<MDXEditorMethods>(null);
-	const { validate, errors } = useNewsValidation();
-	const [isErrorModal, setIsErrorModal] = useState<boolean>(false);
+	const { languages } = useLanguagesStore();
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_, setCurrentLang] = useState<string>("en");
 	const toast = useToast();
 	const { mutate, isPending } = useMutation({
 		mutationKey: ["create-news"],
@@ -39,229 +39,209 @@ export const NewsForm = () => {
 		onSuccess: async () => {
 			toast.success("News created successfully");
 			navigate("/news");
-			setNews({
-				category_id: null,
-				poster_link: null,
-				province: null,
-				city: null,
-				translations: null
-			});
 		},
 		onError: () => {
 			toast.error("Failed to create news");
 		}
 	});
+	const mdxEditorRef = useRef<MDXEditorMethods>(null);
+	const {
+		handleSubmit,
+		register,
+		formState: { errors },
+		setError,
+		control,
+		getValues
+	} = useForm<z.infer<typeof schema>>({
+		resolver: zodResolver(schema),
+		defaultValues: {
+			currentLangId: languages?.[0].language_id,
+			translations: languages.map(lang => ({
+				language_id: lang.language_id,
+				title: "",
+				description: "",
+				content: ""
+			}))
+		}
+	});
+	const { fields } = useFieldArray({
+		name: "translations",
+		control
+	});
 
-	useEffect(() => {
-		const isLanguageExist = news.translations?.find(
-			translation => translation.language_id === currentLanguageId
-		);
-		if (!isLanguageExist) {
-			setNews({
-				...news,
-				translations: [
-					...(news.translations || []),
-					{
-						language_id: currentLanguageId,
-						title: "",
-						description: "",
-						content: ""
-					}
-				]
+	const onSubmit: SubmitHandler<z.infer<typeof schema>> = data => {
+		if (data.translations.length !== languages?.length) {
+			setError("translations", {
+				type: "manual",
+				message: "Please fill all translations"
 			});
-		}
-
-		if (mdxEditorRef.current) {
-			mdxEditorRef.current.setMarkdown(
-				news.translations?.find(
-					translation => translation.language_id === currentLanguageId
-				)?.content || ""
-			);
-		}
-	}, [currentLanguageId]);
-
-	useEffect(() => {
-		// setNews({
-		// 	...news,
-		// 	translations: languages.map(language => {
-		// 		return {
-		// 			language_id: language.language_id,
-		// 			title: null,
-		// 			description: null,
-		// 			content: null
-		// 		};
-		// 	})
-		// });
-
-		console.log(news);
-	}, []);
-
-	const handleCategoryChange = (event: SelectChangeEvent) => {
-		const {
-			target: { value }
-		} = event;
-		setNews({
-			...news,
-			category_id: Number(value)
-		});
-	};
-
-	const handleLanguageChange = (id: number) => {
-		setCurrentLanguageId(id);
-	};
-
-	const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setNews({
-			...news,
-			translations: news.translations?.map(translation => {
-				if (translation.language_id === currentLanguageId) {
-					return {
-						...translation,
-						title: event.target.value
-					};
-				}
-
-				return {
-					...translation,
-					title: translation.title
-				};
-			})
-		});
-	};
-
-	const handleDescriptionChange = (
-		event: React.ChangeEvent<HTMLInputElement>
-	) => {
-		setNews({
-			...news,
-			translations: news.translations?.map(translation => {
-				if (translation.language_id === currentLanguageId) {
-					return {
-						...translation,
-						description: event.target.value
-					};
-				}
-				return translation;
-			})
-		});
-	};
-
-	const handleContentChange = (content: string) => {
-		setNews({
-			...news,
-			translations: news.translations?.map(translation => {
-				if (translation.language_id === currentLanguageId) {
-					return {
-						...translation,
-						content
-					};
-				}
-				return translation;
-			})
-		});
-	};
-
-	const handleSubmit = () => {
-		const isError = validate();
-		if (isError) {
-			setIsErrorModal(true);
 			return;
 		}
-		mutate(news);
+		const editedData = {
+			...data,
+			category_id: Number(data.category_id)
+		};
+
+		mutate(editedData);
 	};
 
 	return (
-		<Box maxWidth={1000}>
-			<SelectCategory
-				value={news.category_id?.toString() || ""}
-				onChange={handleCategoryChange}
-			/>
-			<LanguageSelection
-				value={currentLanguageId}
-				onChange={handleLanguageChange}
-			/>
-			<Box maxWidth={500}>
-				<Box sx={{ display: "flex", gap: pxToRem(20) }} mb={pxToRem(20)}>
-					<TextField
-						value={news.province || ""}
-						onChange={event =>
-							setNews({ ...news, province: event.target.value })
-						}
-						label='Province'
-						fullWidth
-					/>
-					<TextField
-						value={news.city || ""}
-						onChange={event => setNews({ ...news, city: event.target.value })}
-						fullWidth
-						label='City'
-					/>
-				</Box>
-				<ImageDropZone
-					handleImageLink={posterLink =>
-						setNews({
-							...news,
-							poster_link: posterLink
-						})
-					}
+		<Box maxWidth={600}>
+			<form onSubmit={handleSubmit(onSubmit)}>
+				<Controller
+					control={control}
+					name='category_id'
+					defaultValue={""}
+					render={({ field }) => (
+						<SelectCategory
+							{...field}
+							error={!!errors?.category_id}
+							helperText={errors?.category_id?.message}
+						/>
+					)}
 				/>
-				<Box mb={pxToRem(20)}>
+				<Box display='flex' gap='10px' mb='20px'>
 					<TextField
-						onChange={handleTitleChange}
-						value={
-							news.translations?.find(
-								translation => translation.language_id === currentLanguageId
-							)?.title || ""
-						}
+						{...register("city")}
+						placeholder='City'
+						defaultValue={""}
+						error={!!errors?.city}
+						helperText={errors?.city?.message}
 						fullWidth
-						label='Title'
+					/>
+					<TextField
+						{...register("province")}
+						placeholder='Province'
+						defaultValue={""}
+						error={!!errors?.province}
+						helperText={errors?.province?.message}
+						fullWidth
 					/>
 				</Box>
-				<Box mb={pxToRem(20)}>
-					<TextField
-						onChange={handleDescriptionChange}
-						value={
-							news.translations?.find(
-								translation => translation.language_id === currentLanguageId
-							)?.description || ""
-						}
-						minRows={3}
-						label='Description'
-						fullWidth
-						multiline
-					/>
-				</Box>
-			</Box>
-			<MarkdownEditor ref={mdxEditorRef} onChange={handleContentChange} />
-			<Button disabled={isPending} onClick={handleSubmit} variant='contained'>
-				{isPending ? <CircularProgress /> : "Create"}
-			</Button>
+				<Controller
+					render={({ field: { onChange } }) => (
+						<ImageDropZone
+							handleImageLink={onChange}
+							error={!!errors?.poster_link}
+							message={errors?.poster_link?.message}
+						/>
+					)}
+					name={"poster_link"}
+					control={control}
+				/>
+				<Controller
+					render={({ field: { value, onChange } }) => {
+						return (
+							<LanguageSelection
+								value={value}
+								onChange={value => {
+									setCurrentLang(
+										languages.find(lang => lang.language_id === value)
+											?.language_code as string
+									);
+									onChange(value);
+								}}
+							/>
+						);
+					}}
+					name={`currentLangId`}
+					control={control}
+				/>
 
-			<Dialog
-				open={isErrorModal}
-				onClose={() => setIsErrorModal(false)}
-				aria-labelledby='alert-dialog-title'
-				aria-describedby='alert-dialog-description'
-			>
-				<DialogTitle id='alert-dialog-title'>Validation Error!</DialogTitle>
-				<DialogContent>
-					<DialogContentText id='alert-dialog-description'>
-						{Object.keys(errors).map(key => {
-							return (
-								<Fragment key={key}>
-									<span>{errors[key]}</span>
-									<br />
-								</Fragment>
-							);
-						})}
-					</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setIsErrorModal(false)} autoFocus>
-						OK
-					</Button>
-				</DialogActions>
-			</Dialog>
+				{fields.map((field, index) => {
+					const langIndex = languages.findIndex(
+						lang => lang.language_id === getValues().currentLangId
+					);
+
+					if (index === langIndex) {
+						return (
+							<Box key={field.id} mb='20px'>
+								<Box mb='20px'>
+									<Controller
+										control={control}
+										defaultValue={""}
+										name={`translations.${index}.description`}
+										key={`translations.${index}.description`}
+										render={({ field }) => (
+											<TextField
+												{...field}
+												minRows={3}
+												multiline
+												placeholder='Description'
+												error={!!errors.translations?.[index]?.description}
+												helperText={
+													errors.translations?.[index]?.description?.message
+												}
+												fullWidth
+											/>
+										)}
+									/>
+								</Box>
+								<Box mb='20px'>
+									<Controller
+										control={control}
+										name={`translations.${index}.title`}
+										defaultValue={""}
+										key={`translations.${index}.title`}
+										render={({ field }) => (
+											<TextField
+												{...field}
+												placeholder='Title'
+												error={!!errors.translations?.[index]?.title}
+												helperText={
+													errors.translations?.[index]?.title?.message
+												}
+												fullWidth
+											/>
+										)}
+									/>
+								</Box>
+								<Box>
+									<Controller
+										control={control}
+										name={`translations.${index}.content`}
+										key={`translations.${index}.content`}
+										defaultValue={""}
+										render={({ field: { onChange, value } }) => (
+											<MarkdownEditor
+												ref={mdxEditorRef}
+												onChange={value => {
+													onChange(mdxEditorRef.current?.getMarkdown() ?? "");
+													mdxEditorRef.current?.setMarkdown(value);
+												}}
+												value={value}
+												error={!!errors.translations?.[index]?.content}
+												helperText={
+													errors.translations?.[index]?.content?.message
+												}
+											/>
+										)}
+									/>
+								</Box>
+							</Box>
+						);
+					}
+				})}
+
+				{!!errors.translations && (
+					<Typography
+						sx={{
+							color: "#d32f2f",
+							marginBottom: "20px"
+						}}
+					>
+						{errors.translations?.message}
+					</Typography>
+				)}
+
+				<Button type='submit' disabled={isPending} variant='contained'>
+					{isPending ? (
+						<CircularProgress size={24} color='inherit' />
+					) : (
+						"Create"
+					)}
+				</Button>
+			</form>
 		</Box>
 	);
 };

@@ -8,9 +8,13 @@ export interface GetCategoriesResponse extends IResponse {
 
 export interface Category {
 	category_id: number;
-	categoryTranslations: CategoryTranslation[];
+	category_name: string;
+	createdAt: string;
 }
 
-export interface CategoryTranslation {
-	category_name: string;
+export interface CreateCategoryDto {
+	translations: {
+		language_id: number;
+		category_name: string;
+	}[];
 }

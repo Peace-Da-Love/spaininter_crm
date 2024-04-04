@@ -1,17 +1,17 @@
-import { Typography } from "@mui/material";
-import { NewsForm } from "@/widgets/news-form";
 import { pxToRem } from "@/shared/css-utils";
+import { CategoryForm } from "@/widgets/category-form";
+import { Typography } from "@mui/material";
 import { LoadingLanguages } from "@/entites/loading-languages";
 import { Loading } from "./loading.tsx";
 
-export const CreateNewsPage = () => {
+export const CreateCategoryPage = () => {
 	return (
 		<section>
 			<Typography mb={pxToRem(20)} variant='h1'>
-				Create news
+				Create category
 			</Typography>
 			<LoadingLanguages loadingComponent={<Loading />}>
-				<NewsForm />
+				<CategoryForm />
 			</LoadingLanguages>
 		</section>
 	);

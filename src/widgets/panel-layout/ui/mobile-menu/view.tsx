@@ -12,10 +12,13 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { LogOut } from "@/features/log-out";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import { useUserStore } from "@/app/store";
+import { navigation } from "@/app/constance";
 
 export const MobileMenu = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const location = useLocation();
+	const { user } = useUserStore();
 	const { pathname } = location;
 
 	const toggleDrawer =
@@ -66,30 +69,25 @@ export const MobileMenu = () => {
 						Menu
 					</Typography>
 					<List sx={{ display: "flex", padding: 0, flexDirection: "column" }}>
-						<ListItem>
-							<Link
-								onClick={toggleDrawer(false)}
-								sx={{
-									textDecoration: pathname === "/news" ? "underline" : "none"
-								}}
-								component={RouterLink}
-								to='news'
-							>
-								News
-							</Link>
-						</ListItem>
-						<ListItem>
-							<Link
-								onClick={toggleDrawer(false)}
-								sx={{
-									textDecoration: pathname === "/admins" ? "underline" : "none"
-								}}
-								component={RouterLink}
-								to='admins'
-							>
-								Admins
-							</Link>
-						</ListItem>
+						{navigation.map((item, index) => {
+							if (item.secure && user.role === "creator") return;
+
+							return (
+								<ListItem key={`Mobile-menu navigation item - ${index}`}>
+									<Link
+										onClick={toggleDrawer(false)}
+										sx={{
+											textDecoration:
+												pathname === item.link ? "underline" : "none"
+										}}
+										component={RouterLink}
+										to={item.link}
+									>
+										{item.title}
+									</Link>
+								</ListItem>
+							);
+						})}
 					</List>
 					<Typography variant='h6' gutterBottom>
 						Settings

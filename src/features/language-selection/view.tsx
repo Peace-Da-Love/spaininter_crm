@@ -1,25 +1,20 @@
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { languageModel } from "@/app/models/language-model";
+import { Box, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 import { FC } from "react";
-import { useNewsStore } from "@/app/store";
+import { useLanguagesStore } from "@/app/store";
 
 type Props = {
 	value: number;
-	onChange: (id: number) => void;
+	onChange: (value: number) => void;
+	defaultValue?: number;
 };
 
-export const LanguageSelection: FC<Props> = ({ value, onChange }) => {
-	const { setLanguages } = useNewsStore();
-	const { data, isLoading } = useQuery({
-		queryKey: ["languages-key"],
-		queryFn: () =>
-			languageModel().then(res => {
-				setLanguages(res.data.data.languages);
-				return res;
-			})
-	});
+export const LanguageSelection: FC<Props> = ({
+	value,
+	onChange,
+	defaultValue
+}) => {
+	const { languages } = useLanguagesStore();
 
 	const handleAlignment = (
 		_event: React.MouseEvent<HTMLElement>,
@@ -30,30 +25,23 @@ export const LanguageSelection: FC<Props> = ({ value, onChange }) => {
 		}
 	};
 
-	if (isLoading) {
-		return <div>Loading...</div>;
-	}
-
 	return (
-		<ToggleButtonGroup
-			value={value}
-			exclusive
-			onChange={handleAlignment}
-			aria-label='text alignment'
-			sx={{ marginBottom: pxToRem(20) }}
-		>
-			{data &&
-				data.data.data.languages.map(lang => {
+		<Box sx={{ marginBottom: pxToRem(20) }}>
+			<ToggleButtonGroup
+				value={value}
+				exclusive
+				onChange={handleAlignment}
+				aria-label='text alignment'
+				defaultValue={defaultValue}
+			>
+				{languages?.map(value => {
 					return (
-						<ToggleButton
-							key={lang.language_id}
-							value={lang.language_id}
-							aria-label={lang.language_code}
-						>
-							{lang.language_code}
+						<ToggleButton key={value.language_id} value={value.language_id}>
+							{value.language_code}
 						</ToggleButton>
 					);
 				})}
-		</ToggleButtonGroup>
+			</ToggleButtonGroup>
+		</Box>
 	);
 };

@@ -1,2 +1,2 @@
 export { useUserStore } from "./user-store.ts";
-export { useNewsStore } from "./news-store.ts";
+export { useLanguagesStore } from "./languages-store.ts";

@@ -9,6 +9,8 @@ import { NewsPage } from "@/pages/news";
 import { CreateNewsPage } from "@/pages/create-news";
 import { AdminsPage } from "@/pages/admins";
 import { NotFoundPage } from "@/pages/not-found";
+import { CategoriesPage } from "src/pages/categories";
+import { CreateCategoryPage } from "@/pages/create-category";
 
 export const Router = () => {
 	return (
@@ -21,6 +23,11 @@ export const Router = () => {
 							<Route path={"/news"} element={<NewsPage />} />
 							<Route path={"/create-news"} element={<CreateNewsPage />} />
 							<Route path={"/admins"} element={<AdminsPage />} />
+							<Route path={"/categories"} element={<CategoriesPage />} />
+							<Route
+								path={"/create-category"}
+								element={<CreateCategoryPage />}
+							/>
 						</Route>
 					</Route>
 					<Route path={"/auth"} element={<AuthPage />} />

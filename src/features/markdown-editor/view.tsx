@@ -18,21 +18,23 @@ import {
 	Separator,
 	tablePlugin,
 	thematicBreakPlugin,
-	toolbarPlugin,
-	UndoRedo
+	toolbarPlugin
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
 import { IImageDto, imageModel } from "@/app/models/image-model";
 import { useRef } from "react";
 import { forwardRef, useImperativeHandle } from "react";
-import { ClassNames } from "@emotion/react";
+import { Box, FormControl, FormHelperText } from "@mui/material";
 
 type Props = {
 	onChange?: (value: string) => void;
+	value: string;
+	error?: boolean;
+	helperText?: string;
 };
 
 export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
-	({ onChange, ...props }, ref) => {
+	({ onChange, value, error, helperText, ...props }, ref) => {
 		const editorRef = useRef<MDXEditorMethods | null>(null);
 
 		const imageUploadHandler = async (file: File) => {
@@ -55,17 +57,17 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 		}));
 
 		return (
-			<ClassNames>
-				{({ css }) => (
+			<FormControl error={error}>
+				<Box
+					sx={{
+						border: `1px solid ${error ? "#f00" : "#d1d5db"}`,
+						borderRadius: "0.375rem"
+					}}
+				>
 					<MDXEditor
 						{...props}
-						markdown={""}
+						markdown={value ?? ""}
 						onChange={onChange}
-						className={css`
-							background: #fff;
-							margin-bottom: 20px;
-							border-radius: 0.375rem;
-						`}
 						plugins={[
 							headingsPlugin(),
 							listsPlugin(),
@@ -82,7 +84,7 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 							toolbarPlugin({
 								toolbarContents: () => (
 									<DiffSourceToggleWrapper options={["rich-text"]}>
-										<UndoRedo />
+										{/*<UndoRedo />*/}
 										<BoldItalicUnderlineToggles />
 										<Separator />
 										<ListsToggle />
@@ -98,8 +100,9 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 						]}
 						ref={editorRef}
 					/>
-				)}
-			</ClassNames>
+				</Box>
+				{error && <FormHelperText>{helperText}</FormHelperText>}
+			</FormControl>
 		);
 	}
 );

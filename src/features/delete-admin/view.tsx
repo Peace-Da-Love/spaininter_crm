@@ -2,6 +2,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import {
 	Button,
 	ButtonBase,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -21,8 +22,8 @@ export const DeleteAdmin: FC<Props> = ({ adminId }) => {
 	const queryClient = useQueryClient();
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const toast = useToast();
-	const { mutate } = useMutation({
-		mutationKey: ["delete-admin-ke"],
+	const { mutate, isPending } = useMutation({
+		mutationKey: ["delete-admin-key"],
 		mutationFn: (adminId: number) => authModel.deleteAdmin(adminId),
 		onSuccess: async () => {
 			setIsOpen(false);
@@ -37,7 +38,10 @@ export const DeleteAdmin: FC<Props> = ({ adminId }) => {
 	});
 
 	const handleOpen = () => setIsOpen(true);
-	const handleClose = () => setIsOpen(false);
+	const handleClose = () => {
+		if (isPending) return;
+		setIsOpen(false);
+	};
 	const handleDelete = () => {
 		mutate(adminId);
 	};
@@ -55,9 +59,16 @@ export const DeleteAdmin: FC<Props> = ({ adminId }) => {
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={handleClose}>Cancel</Button>
-					<Button sx={{ color: "#FF6B6B" }} onClick={handleDelete} autoFocus>
-						Delete
+					<Button disabled={isPending} onClick={handleClose}>
+						Cancel
+					</Button>
+					<Button
+						sx={{ color: "#FF6B6B" }}
+						disabled={isPending}
+						onClick={handleDelete}
+						autoFocus
+					>
+						{isPending ? <CircularProgress size={20} /> : "Delete"}
 					</Button>
 				</DialogActions>
 			</Dialog>

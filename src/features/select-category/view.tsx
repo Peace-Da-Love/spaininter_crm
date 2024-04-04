@@ -1,16 +1,18 @@
+import { forwardRef } from "react";
 import {
 	Box,
 	FormControl,
+	FormHelperText,
 	InputLabel,
 	MenuItem,
 	OutlinedInput,
-	Select
+	Select,
+	Skeleton,
+	Typography
 } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 import { useQuery } from "@tanstack/react-query";
 import { categoriesModel } from "@/app/models/categories-model";
-import { FC } from "react";
-import { SelectChangeEvent } from "@mui/material/Select/SelectInput";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -24,45 +26,63 @@ const MenuProps = {
 };
 
 type Props = {
-	value: string;
-	onChange: (event: SelectChangeEvent, child?: React.ReactNode) => void;
+	error: boolean;
+	helperText?: string;
 };
 
-export const SelectCategory: FC<Props> = ({ value, onChange }) => {
-	const { data, isLoading } = useQuery({
-		queryKey: ["get-categories-key"],
-		queryFn: () => categoriesModel.getCategories()
-	});
+export const SelectCategory = forwardRef<HTMLDivElement, Props>(
+	({ error, helperText, ...props }, ref) => {
+		const { data, isLoading, isError } = useQuery({
+			queryKey: ["get-categories-key"],
+			queryFn: () => categoriesModel.getCategories()
+		});
 
-	if (isLoading) {
-		return <div>Loading...</div>;
+		if (isError) {
+			return <Typography>Error loading categories</Typography>;
+		}
+
+		return (
+			<Box sx={{ marginBottom: pxToRem(20) }}>
+				{isLoading && (
+					<Skeleton
+						variant='rectangular'
+						width={300}
+						height={56}
+						sx={{
+							borderRadius: "4px"
+						}}
+					/>
+				)}
+				{!isLoading && (
+					<FormControl error={error} sx={{ width: 300 }}>
+						<InputLabel id='demo-multiple-name-label'>
+							Select Category
+						</InputLabel>
+						<Select
+							labelId='demo-multiple-name-label'
+							id='demo-multiple-name'
+							input={<OutlinedInput label='Select Category' />}
+							MenuProps={MenuProps}
+							ref={ref}
+							{...props}
+						>
+							{data &&
+								data.data.data.categories.map(category => {
+									return (
+										<MenuItem
+											key={category.category_id}
+											value={category.category_id.toString()}
+											sx={{ textTransform: "capitalize" }}
+										>
+											{category.category_name}
+										</MenuItem>
+									);
+								})}
+						</Select>
+						{error && <FormHelperText>{helperText}</FormHelperText>}
+					</FormControl>
+				)}
+			</Box>
+		);
 	}
-
-	return (
-		<Box>
-			<FormControl sx={{ marginBottom: pxToRem(20), width: 300 }}>
-				<InputLabel id='demo-multiple-name-label'>Select Category</InputLabel>
-				<Select
-					labelId='demo-multiple-name-label'
-					id='demo-multiple-name'
-					input={<OutlinedInput label='Select Category' />}
-					MenuProps={MenuProps}
-					value={value}
-					onChange={onChange}
-				>
-					{data &&
-						data.data.data.categories.map(category => {
-							return (
-								<MenuItem
-									key={category.category_id}
-									value={category.category_id.toString()}
-								>
-									{category.categoryTranslations[0].category_name}
-								</MenuItem>
-							);
-						})}
-				</Select>
-			</FormControl>
-		</Box>
-	);
-};
+);

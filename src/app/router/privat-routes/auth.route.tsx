@@ -4,12 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { authModel } from "@/app/models/auth-model";
 import Cookies from "js-cookie";
 import { CircularProgress } from "@mui/material";
+import { decodeJwtPayload } from "@/shared/utils";
 
 export const AuthRoute = () => {
 	const {
 		user: { isAuth, isLoading },
 		setIsAuth,
-		setIsLoading
+		setIsLoading,
+		setRole
 	} = useUserStore(state => state);
 	const { isPending } = useQuery({
 		queryKey: ["refresh-key"],
@@ -18,8 +20,10 @@ export const AuthRoute = () => {
 				.refresh()
 				.then(data => {
 					const accessToken = data.data.data.accessToken;
+					const decodedJwt = decodeJwtPayload(accessToken);
 					Cookies.set("access_token", accessToken);
 					setIsAuth(true);
+					setRole(decodedJwt.data.role);
 					return data;
 				})
 				.catch(() => {

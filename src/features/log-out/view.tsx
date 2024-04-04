@@ -1,4 +1,10 @@
-import { Button, Dialog, DialogActions, DialogTitle } from "@mui/material";
+import {
+	Button,
+	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogTitle
+} from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -11,7 +17,7 @@ export const LogOut = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const navigate = useNavigate();
 	const toast = useToast();
-	const { mutate } = useMutation({
+	const { mutate, isPending } = useMutation({
 		mutationKey: ["log-out-key"],
 		mutationFn: () => authModel.logOut(),
 		onSuccess: () => {
@@ -26,7 +32,10 @@ export const LogOut = () => {
 	});
 
 	const handleOpen = () => setIsOpen(true);
-	const handleClose = () => setIsOpen(false);
+	const handleClose = () => {
+		if (isPending) return;
+		setIsOpen(false);
+	};
 	const handleLogOut = () => {
 		mutate();
 	};
@@ -39,9 +48,15 @@ export const LogOut = () => {
 			<Dialog open={isOpen} onClose={handleClose}>
 				<DialogTitle>Are you sure you want to log out?</DialogTitle>
 				<DialogActions>
-					<Button onClick={handleClose}>Cancel</Button>
-					<Button sx={{ color: "#FF6B6B" }} onClick={handleLogOut}>
-						Log Out
+					<Button disabled={isPending} onClick={handleClose}>
+						Cancel
+					</Button>
+					<Button
+						disabled={isPending}
+						sx={{ color: "#FF6B6B" }}
+						onClick={handleLogOut}
+					>
+						{isPending ? <CircularProgress size={20} /> : "Log out"}
 					</Button>
 				</DialogActions>
 			</Dialog>

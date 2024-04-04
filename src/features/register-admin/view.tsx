@@ -5,7 +5,8 @@ import {
 	DialogTitle,
 	TextField,
 	DialogActions,
-	Typography
+	Typography,
+	CircularProgress
 } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 import AddIcon from "@mui/icons-material/Add";
@@ -13,18 +14,30 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/shared/hooks";
 import { authModel, IRegisterDto } from "@/app/models/auth-model";
+import { schema } from "./model.ts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
 
 export const RegisterAdmin = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
-	const [value, setValue] = useState<string>("");
 	const queryClient = useQueryClient();
 	const toast = useToast();
-	const { mutate } = useMutation({
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { errors }
+	} = useForm<z.infer<typeof schema>>({
+		resolver: zodResolver(schema)
+	});
+	const { mutate, isPending } = useMutation({
 		mutationKey: ["register-admin-key"],
 		mutationFn: (dto: IRegisterDto) => authModel.register(dto),
 		onSuccess: async () => {
 			setIsOpen(false);
 			toast.success("Admin registered successfully");
+			reset();
 		},
 		onError: () => {
 			toast.error("Failed to register admin");
@@ -35,17 +48,13 @@ export const RegisterAdmin = () => {
 	});
 
 	const handleOpen = () => setIsOpen(true);
-	const handleClose = () => setIsOpen(false);
-	const handleRegister = () => {
-		if (value.length === 0) {
-			toast.error("Admin ID is required");
-			return;
-		}
-		if (value.length < 5) {
-			toast.error("Admin ID is too short");
-			return;
-		}
-		mutate({ tg_id: parseInt(value) });
+	const handleClose = () => {
+		if (isPending) return;
+		setIsOpen(false);
+	};
+
+	const onSubmit: SubmitHandler<z.infer<typeof schema>> = data => {
+		mutate(data);
 	};
 
 	return (
@@ -62,22 +71,31 @@ export const RegisterAdmin = () => {
 				Add admin <AddIcon />
 			</Button>
 			<Dialog open={isOpen} onClose={handleClose}>
-				<DialogTitle>Register admin</DialogTitle>
-				<DialogContent>
-					<Typography mb={pxToRem(15)}>
-						Enter the admin ID to register a new admin
-					</Typography>
-					<TextField
-						type={"number"}
-						label={"Admin ID"}
-						value={value}
-						onChange={e => setValue(e.target.value)}
-					/>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleClose}>Cancel</Button>
-					<Button onClick={handleRegister}>Register</Button>
-				</DialogActions>
+				<form onSubmit={handleSubmit(onSubmit)}>
+					<DialogTitle>Register admin</DialogTitle>
+					<DialogContent>
+						<Typography mb={pxToRem(15)}>
+							Enter the admin ID to register a new admin
+						</Typography>
+						<TextField
+							{...register("tg_id")}
+							label='Admin ID'
+							type='number'
+							variant='outlined'
+							margin='normal'
+							error={!!errors.tg_id}
+							helperText={errors.tg_id?.message}
+						/>
+					</DialogContent>
+					<DialogActions>
+						<Button disabled={isPending} onClick={handleClose}>
+							Cancel
+						</Button>
+						<Button disabled={isPending} type='submit'>
+							{isPending ? <CircularProgress size={20} /> : "Register"}
+						</Button>
+					</DialogActions>
+				</form>
 			</Dialog>
 		</>
 	);

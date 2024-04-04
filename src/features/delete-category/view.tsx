@@ -1,3 +1,7 @@
+import { categoriesModel } from "@/app/models/categories-model";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { FC, useState } from "react";
+import { useToast } from "@/shared/hooks";
 import {
 	Button,
 	ButtonBase,
@@ -9,31 +13,28 @@ import {
 	DialogTitle
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { FC, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteModel, DeleteParams } from "./model.ts";
-import { useToast } from "@/shared/hooks";
 
 type Props = {
-	newsId: number;
+	categoryId: number;
 };
 
-export const DeleteNews: FC<Props> = ({ newsId }) => {
+export const DeleteCategory: FC<Props> = ({ categoryId }) => {
 	const queryClient = useQueryClient();
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const toast = useToast();
 	const { mutate, isPending } = useMutation({
-		mutationKey: ["delete-news"],
-		mutationFn: (dto: DeleteParams) => deleteModel(dto),
+		mutationKey: ["delete-admin-ke"],
+		mutationFn: (categoryId: number) =>
+			categoriesModel.deleteCategory(categoryId),
 		onSuccess: async () => {
 			setIsOpen(false);
-			toast.success("News deleted successfully");
+			toast.success("Admin deleted successfully");
 		},
 		onError: () => {
-			toast.error("Failed to delete news");
+			toast.error("Failed to delete admin");
 		},
 		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ["news-key"] });
+			queryClient.invalidateQueries({ queryKey: ["get-categories-table-key"] });
 		}
 	});
 
@@ -43,8 +44,7 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 		setIsOpen(false);
 	};
 	const handleDelete = () => {
-		const dto: DeleteParams = { news_id: newsId };
-		mutate(dto);
+		mutate(categoryId);
 	};
 
 	return (
@@ -52,18 +52,12 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 			<ButtonBase onClick={handleOpen} sx={{ color: "#FF6B6B" }}>
 				<DeleteIcon />
 			</ButtonBase>
-			<Dialog
-				open={isOpen}
-				onClose={handleClose}
-				aria-labelledby='alert-dialog-title'
-				aria-describedby='alert-dialog-description'
-			>
-				<DialogTitle id='alert-dialog-title'>
-					Delete news from ID {newsId}?
-				</DialogTitle>
+			<Dialog open={isOpen} onClose={handleClose}>
+				<DialogTitle>Delete category from ID {categoryId}?</DialogTitle>
 				<DialogContent>
-					<DialogContentText id='alert-dialog-description'>
-						If you delete the news from the database, it will be lost forever.
+					<DialogContentText>
+						If you delete the category from the database, it will be lost
+						forever.
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
@@ -71,8 +65,8 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 						Cancel
 					</Button>
 					<Button
-						disabled={isPending}
 						sx={{ color: "#FF6B6B" }}
+						disabled={isPending}
 						onClick={handleDelete}
 						autoFocus
 					>

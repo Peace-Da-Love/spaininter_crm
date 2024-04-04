@@ -8,9 +8,15 @@ import { useToast } from "@/shared/hooks";
 
 type Props = {
 	handleImageLink: (url: string | null) => void;
+	error: boolean;
+	message?: string;
 };
 
-export const ImageDropZone: FC<Props> = ({ handleImageLink }) => {
+export const ImageDropZone: FC<Props> = ({
+	handleImageLink,
+	error,
+	message
+}) => {
 	const [imageLink, setImageLink] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { warning } = useToast();
@@ -52,12 +58,16 @@ export const ImageDropZone: FC<Props> = ({ handleImageLink }) => {
 					<Typography gutterBottom>Poster</Typography>
 					<Box
 						sx={{
-							border: "2px dashed #eeeeee",
+							border: error ? "2px dashed #d32f2f" : "2px dashed #eeeeee",
 							borderRadius: "2px",
 							textAlign: "center",
 							padding: "20px",
 							background: "#fff",
-							position: "relative"
+							position: "relative",
+							minHeight: "120px",
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center"
 						}}
 						{...getRootProps({
 							className: "dropzone"
@@ -89,7 +99,13 @@ export const ImageDropZone: FC<Props> = ({ handleImageLink }) => {
 							</Box>
 						)}
 						<input {...getInputProps({})} />
-						<p>Drag 'n' drop some files here, or click to select files</p>
+						<Typography
+							sx={{
+								color: error ? "#d32f2f" : "#757575"
+							}}
+						>
+							Select or drop an image here
+						</Typography>
 					</Box>
 				</Box>
 			)}
@@ -132,6 +148,9 @@ export const ImageDropZone: FC<Props> = ({ handleImageLink }) => {
 						<img src={imageLink} alt='preview' />
 					</Box>
 				</Box>
+			)}
+			{message && (
+				<Box sx={{ marginTop: pxToRem(10), color: "#d32f2f" }}>{message}</Box>
 			)}
 		</Box>
 	);
