@@ -159,6 +159,25 @@ export const NewsForm = () => {
 								<Box mb='20px'>
 									<Controller
 										control={control}
+										name={`translations.${index}.title`}
+										defaultValue={""}
+										key={`translations.${index}.title`}
+										render={({ field }) => (
+											<TextField
+												{...field}
+												placeholder='Title'
+												error={!!errors.translations?.[index]?.title}
+												helperText={
+													errors.translations?.[index]?.title?.message
+												}
+												fullWidth
+											/>
+										)}
+									/>
+								</Box>
+								<Box mb='20px'>
+									<Controller
+										control={control}
 										defaultValue={""}
 										name={`translations.${index}.description`}
 										key={`translations.${index}.description`}
@@ -171,25 +190,6 @@ export const NewsForm = () => {
 												error={!!errors.translations?.[index]?.description}
 												helperText={
 													errors.translations?.[index]?.description?.message
-												}
-												fullWidth
-											/>
-										)}
-									/>
-								</Box>
-								<Box mb='20px'>
-									<Controller
-										control={control}
-										name={`translations.${index}.title`}
-										defaultValue={""}
-										key={`translations.${index}.title`}
-										render={({ field }) => (
-											<TextField
-												{...field}
-												placeholder='Title'
-												error={!!errors.translations?.[index]?.title}
-												helperText={
-													errors.translations?.[index]?.title?.message
 												}
 												fullWidth
 											/>

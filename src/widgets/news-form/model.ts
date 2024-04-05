@@ -16,7 +16,7 @@ const newsFormSchema = z.object({
 		.string()
 		.nonempty("Content is required")
 		.min(5, "Min 5 characters for content")
-		.max(1000, "Max 1000 characters for content")
+		.max(50000, "Max 50000 characters for content")
 });
 
 export const schema = z.object({
