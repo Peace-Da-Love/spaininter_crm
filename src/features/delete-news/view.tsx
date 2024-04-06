@@ -52,12 +52,7 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 			<ButtonBase onClick={handleOpen} sx={{ color: "#FF6B6B" }}>
 				<DeleteIcon />
 			</ButtonBase>
-			<Dialog
-				open={isOpen}
-				onClose={handleClose}
-				aria-labelledby='alert-dialog-title'
-				aria-describedby='alert-dialog-description'
-			>
+			<Dialog open={isOpen} onClose={handleClose}>
 				<DialogTitle id='alert-dialog-title'>
 					Delete news from ID {newsId}?
 				</DialogTitle>
