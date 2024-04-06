@@ -13,6 +13,7 @@ interface INewsResponse extends IResponse {
 				newsTranslations: [
 					{
 						title: string;
+						link: string;
 					}
 				];
 			}

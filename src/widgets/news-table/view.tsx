@@ -10,7 +10,14 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { newsModel } from "./model.ts";
 import { formatDateTime } from "@/shared/utils";
-import { Box, Skeleton, TableContainer, TablePagination } from "@mui/material";
+import {
+	Box,
+	Link,
+	Skeleton,
+	TableContainer,
+	TablePagination
+} from "@mui/material";
+import InsertLinkIcon from "@mui/icons-material/InsertLink";
 import { pxToRem } from "@/shared/css-utils";
 
 export const NewsTable = () => {
@@ -37,6 +44,9 @@ export const NewsTable = () => {
 	const loadingRow = [...Array(limit)].map((_item, index) => {
 		return (
 			<TableRow key={`Loading row - ${index}`}>
+				<TableCell>
+					<Skeleton variant='rounded' width={50} height={20} />
+				</TableCell>
 				<TableCell>
 					<Skeleton variant='rounded' width={50} height={20} />
 				</TableCell>
@@ -82,6 +92,14 @@ export const NewsTable = () => {
 										<Box display='flex' alignItems='center' gap={pxToRem(10)}>
 											<DeleteNews newsId={row.news_id} />
 											<EditNews newsId={row.news_id} />
+											<Link
+												display='block'
+												width='1.5rem'
+												height='1.5rem'
+												href={`https://spaininter.com/news/${row.newsTranslations[0].link}`}
+											>
+												<InsertLinkIcon />
+											</Link>
 										</Box>
 									</TableCell>
 								</TableRow>
