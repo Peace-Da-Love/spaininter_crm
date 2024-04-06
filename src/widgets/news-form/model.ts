@@ -6,7 +6,7 @@ const newsFormSchema = z.object({
 		.string()
 		.nonempty("Title is required")
 		.min(5, "Min 5 characters for title")
-		.max(50, "Max 50 characters for title"),
+		.max(100, "Max 50 characters for title"),
 	description: z
 		.string()
 		.nonempty("Description is required")
