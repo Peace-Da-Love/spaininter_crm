@@ -81,30 +81,37 @@ export const NewsTable = () => {
 				<TableBody>
 					{data &&
 						!isLoading &&
-						data.data.data.rows.map(row => {
-							return (
-								<TableRow hover key={row.news_id}>
-									<TableCell>{row.news_id}</TableCell>
-									<TableCell>{formatDateTime(row.createdAt)}</TableCell>
-									<TableCell>{row.newsTranslations[0].title}</TableCell>
-									<TableCell>{row.views}</TableCell>
-									<TableCell>
-										<Box display='flex' alignItems='center' gap={pxToRem(10)}>
-											<DeleteNews newsId={row.news_id} />
-											<EditNews newsId={row.news_id} />
-											<Link
-												display='block'
-												width='1.5rem'
-												height='1.5rem'
-												href={`https://spaininter.com/news/${row.newsTranslations[0].link}`}
-											>
-												<InsertLinkIcon />
-											</Link>
-										</Box>
-									</TableCell>
-								</TableRow>
-							);
-						})}
+						data.data.data.rows.map(
+							({ news_id, newsTranslations, views, createdAt }) => {
+								const title = newsTranslations[0].title;
+								const link = newsTranslations[0].link;
+
+								return (
+									<TableRow hover key={news_id}>
+										<TableCell>{news_id}</TableCell>
+										<TableCell>{formatDateTime(createdAt)}</TableCell>
+										<TableCell title={title}>
+											{title.length > 40 ? `${title.slice(0, 40)}...` : title}
+										</TableCell>
+										<TableCell>{views}</TableCell>
+										<TableCell>
+											<Box display='flex' alignItems='center' gap={pxToRem(10)}>
+												<DeleteNews newsId={news_id} />
+												<EditNews newsId={news_id} />
+												<Link
+													display='block'
+													width='1.5rem'
+													height='1.5rem'
+													href={`https://spaininter.com/news/${link}`}
+												>
+													<InsertLinkIcon />
+												</Link>
+											</Box>
+										</TableCell>
+									</TableRow>
+								);
+							}
+						)}
 
 					{isLoading && loadingRow}
 				</TableBody>
