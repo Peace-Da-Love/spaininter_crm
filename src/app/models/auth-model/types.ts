@@ -14,6 +14,13 @@ export interface IAdminsSuccess extends IResponse {
 	};
 }
 
+export interface ICreatorsSuccess extends IResponse {
+	data: {
+		count: number;
+		creators: IAdmin[];
+	};
+}
+
 interface IAdmin {
 	id: number;
 	tg_id: number;
@@ -26,3 +33,4 @@ export interface IRegisterDto {
 
 export type IAuthResponse = Promise<AxiosResponse<ILoginSuccess>>;
 export type IAdminsResponse = Promise<AxiosResponse<IAdminsSuccess>>;
+export type ICreatorsResponse = Promise<AxiosResponse<ICreatorsSuccess>>;

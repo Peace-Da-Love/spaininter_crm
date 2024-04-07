@@ -18,3 +18,9 @@ export interface CreateCategoryDto {
 		category_name: string;
 	}[];
 }
+
+export interface ICategoryResponse extends IResponse {
+	data: {
+		categoryName: string;
+	};
+}

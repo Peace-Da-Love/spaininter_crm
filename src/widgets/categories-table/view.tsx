@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { categoriesModel } from "@/app/models/categories-model";
-import { Paper, Skeleton, Typography } from "@mui/material";
+import { Paper, Skeleton, Typography, Box } from "@mui/material";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
@@ -8,6 +8,9 @@ import TableBody from "@mui/material/TableBody";
 import { formatDateTime } from "@/shared/utils";
 import Table from "@mui/material/Table";
 import { DeleteCategory } from "@/features/delete-category";
+// import EditNoteIcon from "@mui/icons-material/EditNote";
+// import { Link as RouterLink } from "react-router-dom";
+import { pxToRem } from "@/shared/css-utils";
 
 export const CategoriesTable = () => {
 	const { data, isLoading } = useQuery({
@@ -64,7 +67,22 @@ export const CategoriesTable = () => {
 									</TableCell>
 									<TableCell>{formatDateTime(category.createdAt)}</TableCell>
 									<TableCell>
-										<DeleteCategory categoryId={category.category_id} />
+										<Box display='flex' alignItems='center' gap={pxToRem(10)}>
+											<DeleteCategory categoryId={category.category_id} />
+											{/*<Link*/}
+											{/*	title='Edit category'*/}
+											{/*	component={RouterLink}*/}
+											{/*	to={`/category/${category.category_id}`}*/}
+											{/*	sx={{*/}
+											{/*		width: "1.5rem",*/}
+											{/*		height: "1.5rem",*/}
+											{/*		display: "inline-block",*/}
+											{/*		color: "#434C6F"*/}
+											{/*	}}*/}
+											{/*>*/}
+											{/*	<EditNoteIcon />*/}
+											{/*</Link>*/}
+										</Box>
 									</TableCell>
 								</TableRow>
 							);

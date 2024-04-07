@@ -99,6 +99,7 @@ export const NewsTable = () => {
 												<DeleteNews newsId={news_id} />
 												<EditNews newsId={news_id} />
 												<Link
+													title='Go to news'
 													target='_blank'
 													display='block'
 													width='1.5rem'

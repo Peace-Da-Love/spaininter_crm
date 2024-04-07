@@ -1,10 +1,25 @@
 import { $api } from "@/app/api";
-import { GetCategoriesResponse, CreateCategoryDto } from "./types.ts";
+import {
+	GetCategoriesResponse,
+	CreateCategoryDto,
+	ICategoryResponse
+} from "./types.ts";
 import { IResponse } from "@/app/types";
+import { AxiosResponse } from "axios";
 
 class Model {
 	public getCategories = async () => {
 		return $api.get<GetCategoriesResponse>("/categories");
+	};
+
+	public getCategory = async (
+		id: number
+	): Promise<AxiosResponse<ICategoryResponse>> => {
+		return $api.get("/categories/category", {
+			params: {
+				id
+			}
+		});
 	};
 
 	public createCategory = async (

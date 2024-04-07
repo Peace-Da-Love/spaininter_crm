@@ -49,7 +49,11 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 
 	return (
 		<>
-			<ButtonBase onClick={handleOpen} sx={{ color: "#FF6B6B" }}>
+			<ButtonBase
+				title='Delete news'
+				onClick={handleOpen}
+				sx={{ color: "#FF6B6B" }}
+			>
 				<DeleteIcon />
 			</ButtonBase>
 			<Dialog open={isOpen} onClose={handleClose}>

@@ -7,6 +7,7 @@ export const LoginButton = () => {
 	const AUTH_URL = import.meta.env.VITE_AUTH_URL;
 	return (
 		<Button
+			title='Go to bot'
 			sx={{
 				display: "inline-flex",
 				alignItems: "center",

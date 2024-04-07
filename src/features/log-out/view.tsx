@@ -6,7 +6,7 @@ import {
 	DialogTitle
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { authModel } from "@/app/models/auth-model";
 import { useToast } from "@/shared/hooks";
@@ -41,8 +41,8 @@ export const LogOut = () => {
 	};
 
 	return (
-		<>
-			<Button sx={{ color: "#FF6B6B" }} onClick={handleOpen}>
+		<Fragment>
+			<Button title='Log-Out' sx={{ color: "#FF6B6B" }} onClick={handleOpen}>
 				<LogoutIcon />
 			</Button>
 			<Dialog open={isOpen} onClose={handleClose}>
@@ -60,6 +60,6 @@ export const LogOut = () => {
 					</Button>
 				</DialogActions>
 			</Dialog>
-		</>
+		</Fragment>
 	);
 };

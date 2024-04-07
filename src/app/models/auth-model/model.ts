@@ -1,4 +1,9 @@
-import { IAdminsResponse, IAuthResponse, IRegisterDto } from "./types.ts";
+import {
+	IAdminsResponse,
+	IAuthResponse,
+	ICreatorsResponse,
+	IRegisterDto
+} from "./types.ts";
 import { $api } from "@/app/api";
 import { IPaginationParams } from "@/app/types/IPaginationParams.ts";
 import { AxiosResponse } from "axios";
@@ -13,14 +18,28 @@ class Model {
 		return $api.delete("/auth/logout");
 	};
 
-	public register = async (
+	public registerAdmin = async (
 		dto: IRegisterDto
 	): Promise<AxiosResponse<IResponse>> => {
-		return $api.post("/auth/register", dto);
+		return $api.post("/auth/register-admin", dto);
+	};
+
+	public registerCreator = async (
+		dto: IRegisterDto
+	): Promise<AxiosResponse<IResponse>> => {
+		return $api.post("/auth/register-creator", dto);
 	};
 
 	public getAdmins = async (params: IPaginationParams): IAdminsResponse => {
 		return $api.get("/auth/admins", {
+			params: {
+				...params
+			}
+		});
+	};
+
+	public getCreators = async (params: IPaginationParams): ICreatorsResponse => {
+		return $api.get("/auth/creators", {
 			params: {
 				...params
 			}

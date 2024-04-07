@@ -22,7 +22,7 @@ export const EditNews: FC<Props> = () => {
 
 	return (
 		<Fragment>
-			<ButtonBase onClick={handleOpen}>
+			<ButtonBase title='Edit news' onClick={handleOpen}>
 				<EditNoteIcon />
 			</ButtonBase>
 

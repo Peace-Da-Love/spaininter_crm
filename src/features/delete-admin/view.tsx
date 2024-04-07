@@ -9,7 +9,7 @@ import {
 	DialogContentText,
 	DialogTitle
 } from "@mui/material";
-import { FC, useState } from "react";
+import { FC, Fragment, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/shared/hooks";
 import { authModel } from "@/app/models/auth-model";
@@ -33,7 +33,12 @@ export const DeleteAdmin: FC<Props> = ({ adminId }) => {
 			toast.error("Failed to delete admin");
 		},
 		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ["admins-key"] });
+			queryClient.invalidateQueries({
+				queryKey: ["admins-key"]
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["creators-key"]
+			});
 		}
 	});
 
@@ -47,15 +52,20 @@ export const DeleteAdmin: FC<Props> = ({ adminId }) => {
 	};
 
 	return (
-		<>
-			<ButtonBase onClick={handleOpen} sx={{ color: "#FF6B6B" }}>
+		<Fragment>
+			<ButtonBase
+				title='Delete admin/creator'
+				onClick={handleOpen}
+				sx={{ color: "#FF6B6B" }}
+			>
 				<DeleteIcon />
 			</ButtonBase>
 			<Dialog open={isOpen} onClose={handleClose}>
-				<DialogTitle>Delete admin from ID {adminId}?</DialogTitle>
+				<DialogTitle>Delete admin/creator from ID {adminId}?</DialogTitle>
 				<DialogContent>
 					<DialogContentText>
-						If you delete the admin from the database, it will be lost forever.
+						If you delete the admin/creator from the database, it will be lost
+						forever.
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
@@ -72,6 +82,6 @@ export const DeleteAdmin: FC<Props> = ({ adminId }) => {
 					</Button>
 				</DialogActions>
 			</Dialog>
-		</>
+		</Fragment>
 	);
 };

@@ -11,6 +11,8 @@ import { AdminsPage } from "@/pages/admins";
 import { NotFoundPage } from "@/pages/not-found";
 import { CategoriesPage } from "src/pages/categories";
 import { CreateCategoryPage } from "@/pages/create-category";
+import { CreatorsPage } from "@/pages/creators";
+import { EditCategoryPage } from "@/pages/edit-category";
 
 export const Router = () => {
 	return (
@@ -28,6 +30,8 @@ export const Router = () => {
 								path={"/create-category"}
 								element={<CreateCategoryPage />}
 							/>
+							<Route path={"/creators"} element={<CreatorsPage />} />
+							<Route path={"/category/:id"} element={<EditCategoryPage />} />
 						</Route>
 					</Route>
 					<Route path={"/auth"} element={<AuthPage />} />

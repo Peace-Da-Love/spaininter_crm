@@ -49,7 +49,11 @@ export const DeleteCategory: FC<Props> = ({ categoryId }) => {
 
 	return (
 		<>
-			<ButtonBase onClick={handleOpen} sx={{ color: "#FF6B6B" }}>
+			<ButtonBase
+				title='Delete category'
+				onClick={handleOpen}
+				sx={{ color: "#FF6B6B" }}
+			>
 				<DeleteIcon />
 			</ButtonBase>
 			<Dialog open={isOpen} onClose={handleClose}>

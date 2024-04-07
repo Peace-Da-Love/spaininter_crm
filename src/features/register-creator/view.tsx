@@ -1,25 +1,25 @@
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	DialogTitle,
-	TextField,
-	DialogActions,
-	Typography,
-	CircularProgress
-} from "@mui/material";
-import { pxToRem } from "@/shared/css-utils";
-import AddIcon from "@mui/icons-material/Add";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/shared/hooks";
-import { authModel, IRegisterDto } from "@/app/models/auth-model";
-import { schema } from "./model.ts";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
+import { schema } from "./model.ts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { authModel, IRegisterDto } from "@/app/models/auth-model";
+import {
+	Button,
+	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	TextField,
+	Typography
+} from "@mui/material";
+import { pxToRem } from "@/shared/css-utils";
+import AddIcon from "@mui/icons-material/Add";
 
-export const RegisterAdmin = () => {
+export const RegisterCreator = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const queryClient = useQueryClient();
 	const toast = useToast();
@@ -32,18 +32,18 @@ export const RegisterAdmin = () => {
 		resolver: zodResolver(schema)
 	});
 	const { mutate, isPending } = useMutation({
-		mutationKey: ["register-admin-key"],
-		mutationFn: (dto: IRegisterDto) => authModel.registerAdmin(dto),
+		mutationKey: ["register-creator-key"],
+		mutationFn: (dto: IRegisterDto) => authModel.registerCreator(dto),
 		onSuccess: async () => {
 			setIsOpen(false);
-			toast.success("Admin registered successfully");
+			toast.success("Creator registered successfully");
 			reset();
 		},
 		onError: () => {
-			toast.error("Failed to register admin");
+			toast.error("Failed to register creator");
 		},
 		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ["admins-key"] });
+			queryClient.invalidateQueries({ queryKey: ["creators-key"] });
 		}
 	});
 
@@ -68,18 +68,18 @@ export const RegisterAdmin = () => {
 				onClick={handleOpen}
 				variant={"contained"}
 			>
-				Add admin <AddIcon />
+				Add creator <AddIcon />
 			</Button>
 			<Dialog open={isOpen} onClose={handleClose}>
 				<form onSubmit={handleSubmit(onSubmit)}>
-					<DialogTitle>Register admin</DialogTitle>
+					<DialogTitle>Register creator</DialogTitle>
 					<DialogContent>
 						<Typography mb={pxToRem(15)}>
-							Enter the admin ID to register a new admin
+							Enter the creator ID to register a new creator
 						</Typography>
 						<TextField
 							{...register("tg_id")}
-							label='Admin ID'
+							label='Creator ID'
 							type='number'
 							variant='outlined'
 							margin='normal'
