@@ -1,7 +1,10 @@
+import "./styles.css";
 import {
 	BlockTypeSelect,
 	BoldItalicUnderlineToggles,
+	InsertThematicBreak,
 	CreateLink,
+	diffSourcePlugin,
 	DiffSourceToggleWrapper,
 	headingsPlugin,
 	imagePlugin,
@@ -24,7 +27,7 @@ import "@mdxeditor/editor/style.css";
 import { IImageDto, imageModel } from "@/app/models/image-model";
 import { useRef } from "react";
 import { forwardRef, useImperativeHandle } from "react";
-import { Box, FormControl, FormHelperText } from "@mui/material";
+import { FormControl, FormHelperText } from "@mui/material";
 
 type Props = {
 	onChange?: (value: string) => void;
@@ -57,50 +60,52 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 		}));
 
 		return (
-			<FormControl error={error}>
-				<Box
-					sx={{
-						border: `1px solid ${error ? "#f00" : "#d1d5db"}`,
-						borderRadius: "0.375rem"
-					}}
-				>
-					<MDXEditor
-						{...props}
-						markdown={value ?? ""}
-						onChange={onChange}
-						plugins={[
-							headingsPlugin(),
-							listsPlugin(),
-							quotePlugin(),
-							linkPlugin(),
-							linkDialogPlugin(),
-							tablePlugin(),
-							thematicBreakPlugin(),
-							markdownShortcutPlugin(),
-							imagePlugin({
-								imageUploadHandler
-							}),
-							quotePlugin(),
-							toolbarPlugin({
-								toolbarContents: () => (
-									<DiffSourceToggleWrapper options={["rich-text"]}>
-										{/*<UndoRedo />*/}
-										<BoldItalicUnderlineToggles />
-										<Separator />
-										<ListsToggle />
-										<Separator />
-										<BlockTypeSelect />
-										<Separator />
-										<CreateLink />
-										<InsertImage />
-										<InsertTable />
-									</DiffSourceToggleWrapper>
-								)
-							})
-						]}
-						ref={editorRef}
-					/>
-				</Box>
+			<FormControl
+				error={error}
+				sx={{
+					border: `1px solid ${error ? "#f00" : "#d1d5db"}`,
+					borderRadius: "0.375rem",
+					width: "100%"
+				}}
+			>
+				<MDXEditor
+					{...props}
+					markdown={value ?? ""}
+					onChange={onChange}
+					className={"editor"}
+					plugins={[
+						diffSourcePlugin({}),
+						headingsPlugin(),
+						listsPlugin(),
+						quotePlugin(),
+						linkPlugin(),
+						linkDialogPlugin(),
+						tablePlugin(),
+						thematicBreakPlugin(),
+						markdownShortcutPlugin(),
+						imagePlugin({
+							imageUploadHandler
+						}),
+						quotePlugin(),
+						toolbarPlugin({
+							toolbarContents: () => (
+								<DiffSourceToggleWrapper options={["rich-text", "source"]}>
+									<BoldItalicUnderlineToggles />
+									<Separator />
+									<ListsToggle />
+									<Separator />
+									<BlockTypeSelect />
+									<InsertThematicBreak />
+									<Separator />
+									<CreateLink />
+									<InsertImage />
+									<InsertTable />
+								</DiffSourceToggleWrapper>
+							)
+						})
+					]}
+					ref={editorRef}
+				/>
 				{error && <FormHelperText>{helperText}</FormHelperText>}
 			</FormControl>
 		);

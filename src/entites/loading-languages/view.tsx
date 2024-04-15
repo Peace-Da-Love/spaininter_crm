@@ -5,7 +5,7 @@ import { Typography } from "@mui/material";
 import { useLanguagesStore } from "@/app/store";
 
 type Props = {
-	children: ReactNode;
+	children?: ReactNode;
 	loadingComponent: ReactNode;
 };
 

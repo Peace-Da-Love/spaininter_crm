@@ -19,8 +19,21 @@ export interface CreateCategoryDto {
 	}[];
 }
 
+export interface UpdateCategoryDto {
+	categoryId: number;
+	languageId: number;
+	categoryName: string;
+}
+
 export interface ICategoryResponse extends IResponse {
 	data: {
-		categoryName: string;
+		category: {
+			id: number;
+			translations: {
+				languageId: number;
+				languageCode: string;
+				categoryName: string;
+			}[];
+		};
 	};
 }

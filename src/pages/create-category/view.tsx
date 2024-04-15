@@ -5,6 +5,7 @@ import { LoadingLanguages } from "@/entites/loading-languages";
 import { Loading } from "./loading.tsx";
 import { Helmet } from "react-helmet-async";
 import { Fragment } from "react";
+import { Back } from "@/shared/ui/components/back";
 
 export const CreateCategoryPage = () => {
 	return (
@@ -13,6 +14,12 @@ export const CreateCategoryPage = () => {
 				<title>SpainInter CRM - Create Category</title>
 			</Helmet>
 			<section>
+				<Back
+					href={"/categories"}
+					sx={{
+						marginBottom: pxToRem(20)
+					}}
+				/>
 				<Typography mb={pxToRem(20)} variant='h1'>
 					Create category
 				</Typography>

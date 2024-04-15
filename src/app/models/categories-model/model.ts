@@ -2,7 +2,8 @@ import { $api } from "@/app/api";
 import {
 	GetCategoriesResponse,
 	CreateCategoryDto,
-	ICategoryResponse
+	ICategoryResponse,
+	UpdateCategoryDto
 } from "./types.ts";
 import { IResponse } from "@/app/types";
 import { AxiosResponse } from "axios";
@@ -30,6 +31,12 @@ class Model {
 
 	public deleteCategory = async (categoryId: number): Promise<IResponse> => {
 		return $api.delete(`/categories/delete?id=${categoryId}`);
+	};
+
+	public updateCategory = async (
+		dto: UpdateCategoryDto
+	): Promise<IResponse> => {
+		return $api.put("/categories/update", dto);
 	};
 }
 

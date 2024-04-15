@@ -86,67 +86,69 @@ export const NewsForm = () => {
 	};
 
 	return (
-		<Box maxWidth={600}>
+		<Box>
 			<form onSubmit={handleSubmit(onSubmit)}>
-				<Controller
-					control={control}
-					name='category_id'
-					defaultValue={""}
-					render={({ field }) => (
-						<SelectCategory
-							{...field}
-							error={!!errors?.category_id}
-							helperText={errors?.category_id?.message}
-						/>
-					)}
-				/>
-				<Box display='flex' gap='10px' mb='20px'>
-					<TextField
-						{...register("city")}
-						placeholder='City'
+				<Box maxWidth={600}>
+					<Controller
+						control={control}
+						name='category_id'
 						defaultValue={""}
-						error={!!errors?.city}
-						helperText={errors?.city?.message}
-						fullWidth
+						render={({ field }) => (
+							<SelectCategory
+								{...field}
+								error={!!errors?.category_id}
+								helperText={errors?.category_id?.message}
+							/>
+						)}
 					/>
-					<TextField
-						{...register("province")}
-						placeholder='Province'
-						defaultValue={""}
-						error={!!errors?.province}
-						helperText={errors?.province?.message}
-						fullWidth
+					<Box display='flex' gap='10px' mb='20px'>
+						<TextField
+							{...register("city")}
+							placeholder='City'
+							defaultValue={""}
+							error={!!errors?.city}
+							helperText={errors?.city?.message}
+							fullWidth
+						/>
+						<TextField
+							{...register("province")}
+							placeholder='Province'
+							defaultValue={""}
+							error={!!errors?.province}
+							helperText={errors?.province?.message}
+							fullWidth
+						/>
+					</Box>
+					<Controller
+						render={({ field: { onChange } }) => (
+							<ImageDropZone
+								handleImageLink={onChange}
+								error={!!errors?.poster_link}
+								message={errors?.poster_link?.message}
+							/>
+						)}
+						name={"poster_link"}
+						control={control}
+					/>
+					<Controller
+						render={({ field: { value, onChange } }) => {
+							return (
+								<LanguageSelection
+									value={value}
+									onChange={value => {
+										setCurrentLang(
+											languages.find(lang => lang.language_id === value)
+												?.language_code as string
+										);
+										onChange(value);
+									}}
+								/>
+							);
+						}}
+						name={`currentLangId`}
+						control={control}
 					/>
 				</Box>
-				<Controller
-					render={({ field: { onChange } }) => (
-						<ImageDropZone
-							handleImageLink={onChange}
-							error={!!errors?.poster_link}
-							message={errors?.poster_link?.message}
-						/>
-					)}
-					name={"poster_link"}
-					control={control}
-				/>
-				<Controller
-					render={({ field: { value, onChange } }) => {
-						return (
-							<LanguageSelection
-								value={value}
-								onChange={value => {
-									setCurrentLang(
-										languages.find(lang => lang.language_id === value)
-											?.language_code as string
-									);
-									onChange(value);
-								}}
-							/>
-						);
-					}}
-					name={`currentLangId`}
-					control={control}
-				/>
 
 				{fields.map((field, index) => {
 					const langIndex = languages.findIndex(
@@ -156,7 +158,7 @@ export const NewsForm = () => {
 					if (index === langIndex) {
 						return (
 							<Box key={field.id} mb='20px'>
-								<Box mb='20px'>
+								<Box mb='20px' maxWidth={600}>
 									<Controller
 										control={control}
 										name={`translations.${index}.title`}
@@ -175,7 +177,7 @@ export const NewsForm = () => {
 										)}
 									/>
 								</Box>
-								<Box mb='20px'>
+								<Box mb='20px' maxWidth={600}>
 									<Controller
 										control={control}
 										defaultValue={""}
@@ -196,7 +198,7 @@ export const NewsForm = () => {
 										)}
 									/>
 								</Box>
-								<Box>
+								<Box maxWidth={900}>
 									<Controller
 										control={control}
 										name={`translations.${index}.content`}

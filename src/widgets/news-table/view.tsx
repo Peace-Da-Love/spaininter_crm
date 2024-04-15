@@ -5,7 +5,6 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { DeleteNews } from "@/features/delete-news";
-import { EditNews } from "@/features/edit-news";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { newsModel } from "./model.ts";
@@ -19,6 +18,8 @@ import {
 } from "@mui/material";
 import InsertLinkIcon from "@mui/icons-material/InsertLink";
 import { pxToRem } from "@/shared/css-utils";
+import { Link as RouterLink } from "react-router-dom";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 
 export const NewsTable = () => {
 	const [page, setPage] = useState<number>(1);
@@ -97,7 +98,19 @@ export const NewsTable = () => {
 										<TableCell>
 											<Box display='flex' alignItems='center' gap={pxToRem(10)}>
 												<DeleteNews newsId={news_id} />
-												<EditNews newsId={news_id} />
+												<Link
+													title='Edit news'
+													component={RouterLink}
+													to={`/news/${news_id}`}
+													sx={{
+														width: "1.5rem",
+														height: "1.5rem",
+														display: "inline-block",
+														color: "#434C6F"
+													}}
+												>
+													<EditNoteIcon />
+												</Link>
 												<Link
 													title='Go to news'
 													target='_blank'

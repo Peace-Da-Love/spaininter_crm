@@ -11,8 +11,8 @@ import { AdminsPage } from "@/pages/admins";
 import { NotFoundPage } from "@/pages/not-found";
 import { CategoriesPage } from "src/pages/categories";
 import { CreateCategoryPage } from "@/pages/create-category";
-import { CreatorsPage } from "@/pages/creators";
 import { EditCategoryPage } from "@/pages/edit-category";
+import { EditNewsPage } from "@/pages/edit-news";
 
 export const Router = () => {
 	return (
@@ -23,6 +23,7 @@ export const Router = () => {
 						<Route element={<PanelLayout />}>
 							<Route path={"/"} element={<HomePage />} />
 							<Route path={"/news"} element={<NewsPage />} />
+							<Route path={"/news/:id"} element={<EditNewsPage />} />
 							<Route path={"/create-news"} element={<CreateNewsPage />} />
 							<Route path={"/admins"} element={<AdminsPage />} />
 							<Route path={"/categories"} element={<CategoriesPage />} />
@@ -30,7 +31,6 @@ export const Router = () => {
 								path={"/create-category"}
 								element={<CreateCategoryPage />}
 							/>
-							<Route path={"/creators"} element={<CreatorsPage />} />
 							<Route path={"/category/:id"} element={<EditCategoryPage />} />
 						</Route>
 					</Route>

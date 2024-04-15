@@ -13,10 +13,5 @@ export const navigation = [
 		link: "/admins",
 		title: "Admins",
 		secure: true
-	},
-	{
-		link: "/creators",
-		title: "Creators",
-		secure: true
 	}
 ];

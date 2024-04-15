@@ -4,7 +4,7 @@ import { FC } from "react";
 import { useLanguagesStore } from "@/app/store";
 
 type Props = {
-	value: number;
+	value?: number | undefined;
 	onChange: (value: number) => void;
 	defaultValue?: number;
 };
