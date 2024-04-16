@@ -6,6 +6,7 @@ import { pxToRem } from "@/shared/css-utils";
 import { EditNews } from "@/features/edit-news";
 import { LoadingLanguages } from "@/entites/loading-languages";
 import { Back } from "@/shared/ui/components/back";
+import { Loading } from "./loading.tsx";
 
 export const EditNewsPage = () => {
 	const { id } = useParams();
@@ -25,7 +26,7 @@ export const EditNewsPage = () => {
 				<Typography variant='h1' mb={pxToRem(20)}>
 					Edit News - {id}
 				</Typography>
-				<LoadingLanguages loadingComponent={<div>Loading...</div>}>
+				<LoadingLanguages loadingComponent={<Loading />}>
 					<EditNews newsId={Number(id)} />
 				</LoadingLanguages>
 			</section>

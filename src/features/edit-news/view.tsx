@@ -1,27 +1,36 @@
 import { FC, Fragment, useRef, useState } from "react";
 import { LanguageSelection } from "@/features/language-selection";
 import { useLanguagesStore } from "@/app/store";
-import { useQuery } from "@tanstack/react-query";
-import { newsModel } from "@/app/models/news-model";
-import { Box, Button, TextField } from "@mui/material";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { newsModel, UpdateNewsDto } from "@/app/models/news-model";
+import { Box, Button, CircularProgress, TextField } from "@mui/material";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { schema } from "./model.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { MarkdownEditor } from "@/features/markdown-editor";
 import { MDXEditorMethods } from "@mdxeditor/editor";
+import { useToast } from "@/shared/hooks";
+import { useNavigate } from "react-router-dom";
+import { Loading } from "./loading.tsx";
 
 type Props = {
 	newsId: number;
 };
 
 export const EditNews: FC<Props> = ({ newsId }) => {
+	const toast = useToast();
+	const navigate = useNavigate();
 	const { languages } = useLanguagesStore();
 	const [lang, setLang] = useState<number>();
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
-	const { handleSubmit, register, control, reset } = useForm<
-		z.infer<typeof schema>
-	>({
+	const {
+		handleSubmit,
+		register,
+		control,
+		reset,
+		formState: { errors }
+	} = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema)
 	});
 	const { data, isLoading, isError } = useQuery({
@@ -47,9 +56,45 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 					return res;
 				})
 	});
+	const { mutate, isPending } = useMutation({
+		mutationKey: ["update-news"],
+		mutationFn: (dto: UpdateNewsDto) => newsModel.update(dto),
+		onSuccess: async () => {
+			toast.success("News updated successfully");
+		},
+		onError: () => {
+			toast.error("Failed to update news");
+		},
+		onSettled: () => {
+			navigate("/news");
+		}
+	});
 
-	const onSubmit: SubmitHandler<z.infer<typeof schema>> = data => {
-		console.log(data);
+	const onSubmit: SubmitHandler<z.infer<typeof schema>> = fields => {
+		const { title, description, content } = fields;
+		const isTitleChanged =
+			title !== data?.data.data.news.newsTranslations?.[0].title;
+		const isDescriptionChanged =
+			description !==
+			data?.data.data.news.newsTranslations?.[0].description
+				.replace(/\\n/g, "\n\n")
+				.replace(/\\|/g, "");
+		const isContentChanged =
+			content !== data?.data.data.news.newsTranslations?.[0].content;
+
+		if (!isTitleChanged && !isDescriptionChanged && !isContentChanged) {
+			toast.info("No changes detected");
+			return;
+		}
+
+		const dto = {
+			newsId,
+			languageId: lang || languages?.[0].language_id,
+			title: isTitleChanged ? title : undefined,
+			description: isDescriptionChanged ? description : undefined,
+			content: isContentChanged ? content : undefined
+		};
+		mutate(dto);
 	};
 
 	return (
@@ -67,6 +112,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 								key={`title-${lang}`}
 								placeholder='Title'
 								defaultValue={data.data.data.news.newsTranslations?.[0].title}
+								error={!!errors?.title}
+								helperText={errors?.title?.message}
 								fullWidth
 								{...register("title")}
 							/>
@@ -79,6 +126,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 								defaultValue={
 									data.data.data.news.newsTranslations?.[0].description
 								}
+								error={!!errors?.description}
+								helperText={errors?.description?.message}
 								placeholder='Description'
 								fullWidth
 								{...register("description")}
@@ -94,6 +143,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 									.replace(/\\|/g, "")}
 								render={({ field }) => (
 									<MarkdownEditor
+										error={!!errors?.content}
+										helperText={errors?.content?.message}
 										value={field.value}
 										ref={mdxEditorRef}
 										onChange={value => {
@@ -104,14 +155,18 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 								)}
 							/>
 						</Box>
-						<Button type='submit' variant='contained'>
-							Save
+						<Button disabled={isPending} type='submit' variant='contained'>
+							{isPending ? (
+								<CircularProgress size={24} color='inherit' />
+							) : (
+								"Save"
+							)}
 						</Button>
 					</Box>
 				)}
 			</form>
 
-			{isLoading && <div>Loading...</div>}
+			{isLoading && <Loading />}
 			{isError && <div>Error...</div>}
 		</Fragment>
 	);

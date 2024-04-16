@@ -1,4 +1,5 @@
 export interface INews {
+	telegramShortText: string;
 	category_id?: number | null;
 	poster_link?: string | null;
 	province?: string | null;

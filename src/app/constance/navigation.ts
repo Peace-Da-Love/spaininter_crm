@@ -10,6 +10,11 @@ export const navigation = [
 		secure: false
 	},
 	{
+		link: "/channels",
+		title: "Channels",
+		secure: false
+	},
+	{
 		link: "/admins",
 		title: "Admins",
 		secure: true

@@ -1,11 +1,4 @@
 import { Fragment, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/shared/hooks";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
-import { schema } from "./model.ts";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { authModel, IRegisterDto } from "@/app/models/auth-model";
 import {
 	Button,
 	CircularProgress,
@@ -18,8 +11,15 @@ import {
 } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 import AddIcon from "@mui/icons-material/Add";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/shared/hooks";
+import { AddChannelDto, channelsModel } from "@/app/models/channels-model";
+import { schema } from "./model.ts";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-export const RegisterCreator = () => {
+export const AddChannel = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const queryClient = useQueryClient();
 	const toast = useToast();
@@ -32,8 +32,8 @@ export const RegisterCreator = () => {
 		resolver: zodResolver(schema)
 	});
 	const { mutate, isPending } = useMutation({
-		mutationKey: ["register-creator-key"],
-		mutationFn: (dto: IRegisterDto) => authModel.registerCreator(dto),
+		mutationKey: ["add-channel-key"],
+		mutationFn: (dto: AddChannelDto) => channelsModel.create(dto),
 		onSuccess: async () => {
 			setIsOpen(false);
 			toast.success("Creator registered successfully");
@@ -43,7 +43,7 @@ export const RegisterCreator = () => {
 			toast.error("Failed to register creator");
 		},
 		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ["creators-key"] });
+			queryClient.invalidateQueries({ queryKey: ["get-channels-key"] });
 		}
 	});
 
@@ -68,31 +68,26 @@ export const RegisterCreator = () => {
 				onClick={handleOpen}
 				variant={"contained"}
 			>
-				Add creator <AddIcon />
+				Add channel <AddIcon />
 			</Button>
 			<Dialog open={isOpen} onClose={handleClose}>
 				<form onSubmit={handleSubmit(onSubmit)}>
-					<DialogTitle>Register creator</DialogTitle>
+					<DialogTitle>Add channel</DialogTitle>
 					<DialogContent>
-						<Typography mb={pxToRem(15)}>
-							Enter the creator ID to register a new creator
-						</Typography>
+						<Typography mb={pxToRem(15)}>Enter the channel ID</Typography>
 						<TextField
-							{...register("tg_id")}
-							label='Creator ID'
-							type='number'
-							variant='outlined'
-							margin='normal'
-							error={!!errors.tg_id}
-							helperText={errors.tg_id?.message}
+							{...register("channelId")}
+							label='Channel ID'
+							fullWidth
+							error={!!errors.channelId}
+							helperText={errors.channelId?.message}
+							type={"number"}
 						/>
 					</DialogContent>
 					<DialogActions>
-						<Button disabled={isPending} onClick={handleClose}>
-							Cancel
-						</Button>
-						<Button disabled={isPending} type='submit'>
-							{isPending ? <CircularProgress size={20} /> : "Register"}
+						<Button onClick={handleClose}>Cancel</Button>
+						<Button type='submit' disabled={isPending}>
+							{isPending ? <CircularProgress size={20} /> : "Add"}
 						</Button>
 					</DialogActions>
 				</form>

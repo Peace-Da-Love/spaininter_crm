@@ -36,3 +36,11 @@ export interface IGetNewsResponse extends IResponse {
 		news: NewsItem;
 	};
 }
+
+export interface UpdateNewsDto {
+	newsId: number;
+	languageId: number;
+	title?: string | undefined;
+	description?: string | undefined;
+	content?: string | undefined;
+}

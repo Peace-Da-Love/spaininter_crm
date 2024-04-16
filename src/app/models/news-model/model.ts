@@ -1,10 +1,10 @@
 import { INews, IResponse } from "@/app/types";
 import { $api } from "@/app/api";
-import { IGetNewsParams, IGetNewsResponse } from "./types.ts";
+import { IGetNewsParams, IGetNewsResponse, UpdateNewsDto } from "./types.ts";
 import { AxiosResponse } from "axios";
 
 class Model {
-	public async create(dto: INews): Promise<IResponse> {
+	public async create(dto: INews): Promise<AxiosResponse<IResponse>> {
 		return $api.post("/news/create", dto);
 	}
 
@@ -14,6 +14,10 @@ class Model {
 		return $api.get(`/news/`, {
 			params
 		});
+	}
+
+	public async update(dto: UpdateNewsDto): Promise<AxiosResponse<IResponse>> {
+		return $api.put("/news/update", dto);
 	}
 }
 
