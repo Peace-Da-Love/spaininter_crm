@@ -23,8 +23,8 @@ export const schema = z.object({
 	telegramShortText: z
 		.string()
 		.nonempty("Telegram short text is required")
-		.min(1)
-		.max(100),
+		.min(5)
+		.max(300),
 	currentLangId: z.number(),
 	province: z
 		.string()
