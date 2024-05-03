@@ -6,29 +6,19 @@ export interface IGetNewsParams {
 }
 
 interface NewsItem {
-	news_id: number;
-	views: number;
-	poster_link: string;
+	newsId: number;
+	posterLink: string;
 	city: string;
-	province: string;
-	createdAt: string;
-	newsTranslations: NewsTranslation[];
-	category: {
-		category_id: number;
-		categoryTranslations: CategoryTranslation[];
-	};
-	updatedAt: string;
-}
-
-interface NewsTranslation {
 	title: string;
-	content: string;
 	description: string;
+	content: string;
 	link: string;
-}
-
-interface CategoryTranslation {
-	category_name: string;
+	categoryId: number;
+	categoryName: string;
+	categoryLink: string;
+	views: number;
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface IGetNewsResponse extends IResponse {

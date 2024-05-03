@@ -11,8 +11,10 @@ class Model {
 	public async getById(
 		params: IGetNewsParams
 	): Promise<AxiosResponse<IGetNewsResponse>> {
-		return $api.get(`/news/`, {
-			params
+		return $api.get(`/news/admin/${params.id}`, {
+			headers: {
+				"accept-language": params.languageCode
+			}
 		});
 	}
 

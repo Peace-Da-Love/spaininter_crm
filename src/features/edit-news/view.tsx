@@ -45,9 +45,9 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				})
 				.then(res => {
 					const values = {
-						title: res.data.data.news.newsTranslations?.[0].title,
-						description: res.data.data.news.newsTranslations?.[0].description,
-						content: res.data.data.news.newsTranslations?.[0].content
+						title: res.data.data.news.title,
+						description: res.data.data.news.description,
+						content: res.data.data.news.content
 							.replace(/\\n/g, "\n\n")
 							.replace(/\\|/g, "")
 					};
@@ -72,15 +72,13 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 
 	const onSubmit: SubmitHandler<z.infer<typeof schema>> = fields => {
 		const { title, description, content } = fields;
-		const isTitleChanged =
-			title !== data?.data.data.news.newsTranslations?.[0].title;
+		const isTitleChanged = title !== data?.data.data.news.title;
 		const isDescriptionChanged =
 			description !==
-			data?.data.data.news.newsTranslations?.[0].description
+			data?.data.data.news.description
 				.replace(/\\n/g, "\n\n")
 				.replace(/\\|/g, "");
-		const isContentChanged =
-			content !== data?.data.data.news.newsTranslations?.[0].content;
+		const isContentChanged = content !== data?.data.data.news.content;
 
 		if (!isTitleChanged && !isDescriptionChanged && !isContentChanged) {
 			toast.info("No changes detected");
@@ -111,7 +109,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 							<TextField
 								key={`title-${lang}`}
 								placeholder='Title'
-								defaultValue={data.data.data.news.newsTranslations?.[0].title}
+								defaultValue={data.data.data.news.title}
 								error={!!errors?.title}
 								helperText={errors?.title?.message}
 								fullWidth
@@ -123,9 +121,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 								key={`description-${lang}`}
 								minRows={3}
 								multiline
-								defaultValue={
-									data.data.data.news.newsTranslations?.[0].description
-								}
+								defaultValue={data.data.data.news.description}
 								error={!!errors?.description}
 								helperText={errors?.description?.message}
 								placeholder='Description'
@@ -138,7 +134,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 								key={`content-${lang}`}
 								name='content'
 								control={control}
-								defaultValue={data.data.data.news.newsTranslations?.[0].content
+								defaultValue={data.data.data.news.content
 									.replace(/\\n/g, "\n\n")
 									.replace(/\\|/g, "")}
 								render={({ field }) => (

@@ -79,6 +79,7 @@ export const NewsForm = () => {
 		}
 		const editedData = {
 			...data,
+			add_link: data.ad_link ?? null,
 			category_id: Number(data.category_id)
 		};
 
@@ -116,6 +117,16 @@ export const NewsForm = () => {
 							defaultValue={""}
 							error={!!errors?.province}
 							helperText={errors?.province?.message}
+							fullWidth
+						/>
+					</Box>
+					<Box mb='20px'>
+						<TextField
+							{...register("ad_link")}
+							placeholder='Telegram ad link'
+							defaultValue={""}
+							error={!!errors?.ad_link}
+							helperText={errors?.ad_link?.message}
 							fullWidth
 						/>
 					</Box>
