@@ -17,6 +17,7 @@ interface NewsItem {
 	categoryName: string;
 	categoryLink: string;
 	views: number;
+	adLink: string | null;
 	createdAt: string;
 	updatedAt: string;
 }

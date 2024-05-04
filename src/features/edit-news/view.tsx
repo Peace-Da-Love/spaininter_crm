@@ -49,7 +49,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 						description: res.data.data.news.description,
 						content: res.data.data.news.content
 							.replace(/\\n/g, "\n\n")
-							.replace(/\\|/g, "")
+							.replace(/\\|/g, ""),
+						adLink: res.data.data.news.adLink ?? ""
 					};
 					reset(values);
 					mdxEditorRef.current?.setMarkdown(values.content);
@@ -71,7 +72,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 	});
 
 	const onSubmit: SubmitHandler<z.infer<typeof schema>> = fields => {
-		const { title, description, content } = fields;
+		const { title, description, content, adLink } = fields;
 		const isTitleChanged = title !== data?.data.data.news.title;
 		const isDescriptionChanged =
 			description !==
@@ -79,8 +80,14 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				.replace(/\\n/g, "\n\n")
 				.replace(/\\|/g, "");
 		const isContentChanged = content !== data?.data.data.news.content;
+		const isAdLinkChanged = adLink !== data?.data.data.news.adLink ?? "";
 
-		if (!isTitleChanged && !isDescriptionChanged && !isContentChanged) {
+		if (
+			!isTitleChanged &&
+			!isDescriptionChanged &&
+			!isContentChanged &&
+			!isAdLinkChanged
+		) {
 			toast.info("No changes detected");
 			return;
 		}
@@ -90,7 +97,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			languageId: lang || languages?.[0].language_id,
 			title: isTitleChanged ? title : undefined,
 			description: isDescriptionChanged ? description : undefined,
-			content: isContentChanged ? content : undefined
+			content: isContentChanged ? content : undefined,
+			adLink: isAdLinkChanged ? adLink : null
 		};
 		mutate(dto);
 	};
@@ -105,6 +113,16 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			<form onSubmit={handleSubmit(onSubmit)}>
 				{!isLoading && !isError && data && (
 					<Box>
+						<Box mb='20px' maxWidth={600}>
+							<TextField
+								{...register("adLink", {})}
+								placeholder='Telegram ad link'
+								defaultValue={data.data.data.news.adLink}
+								error={!!errors?.adLink}
+								helperText={errors?.adLink?.message}
+								fullWidth
+							/>
+						</Box>
 						<Box mb={"20px"} maxWidth={600}>
 							<TextField
 								key={`title-${lang}`}
