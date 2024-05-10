@@ -1,5 +1,6 @@
 import { FC, Fragment, useRef, useState } from "react";
 import { LanguageSelection } from "@/features/language-selection";
+import { TelegramLink } from "./ui/telegram-link";
 import { useLanguagesStore } from "@/app/store";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { newsModel, UpdateNewsDto } from "@/app/models/news-model";
@@ -50,7 +51,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 						content: res.data.data.news.content
 							.replace(/\\n/g, "\n\n")
 							.replace(/\\|/g, ""),
-						adLink: res.data.data.news.adLink ?? ""
+						adLink: res.data.data.news.adLink
 					};
 					reset(values);
 					mdxEditorRef.current?.setMarkdown(values.content);
@@ -75,12 +76,11 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 		const { title, description, content, adLink } = fields;
 		const isTitleChanged = title !== data?.data.data.news.title;
 		const isDescriptionChanged =
-			description !==
-			data?.data.data.news.description
-				.replace(/\\n/g, "\n\n")
-				.replace(/\\|/g, "");
-		const isContentChanged = content !== data?.data.data.news.content;
-		const isAdLinkChanged = adLink !== data?.data.data.news.adLink ?? "";
+			description !== data?.data.data.news.description;
+		const isContentChanged =
+			content !==
+			data?.data.data.news.content.replace(/\\n/g, "\n\n").replace(/\\|/g, "");
+		const isAdLinkChanged = adLink !== data?.data.data.news.adLink;
 
 		if (
 			!isTitleChanged &&
@@ -98,7 +98,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			title: isTitleChanged ? title : undefined,
 			description: isDescriptionChanged ? description : undefined,
 			content: isContentChanged ? content : undefined,
-			adLink: isAdLinkChanged ? adLink : null
+			adLink: isAdLinkChanged ? adLink : undefined
 		};
 		mutate(dto);
 	};
@@ -114,14 +114,22 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				{!isLoading && !isError && data && (
 					<Box>
 						<Box mb='20px' maxWidth={600}>
-							<TextField
-								{...register("adLink", {})}
-								placeholder='Telegram ad link'
+							<Controller
+								name={"adLink"}
+								control={control}
 								defaultValue={data.data.data.news.adLink}
-								error={!!errors?.adLink}
-								helperText={errors?.adLink?.message}
-								fullWidth
+								render={({ field }) => (
+									<TelegramLink value={field.value} onChange={field.onChange} />
+								)}
 							/>
+							{/*<TextField*/}
+							{/*	{...register("adLink", {})}*/}
+							{/*	placeholder='Telegram ad link'*/}
+							{/*	defaultValue={data.data.data.news.adLink}*/}
+							{/*	error={!!errors?.adLink}*/}
+							{/*	helperText={errors?.adLink?.message}*/}
+							{/*	fullWidth*/}
+							{/*/>*/}
 						</Box>
 						<Box mb={"20px"} maxWidth={600}>
 							<TextField

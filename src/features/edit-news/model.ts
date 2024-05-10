@@ -16,5 +16,9 @@ export const schema = z.object({
 		.nonempty("Content is required")
 		.min(5, "Min 5 characters for content")
 		.max(50000, "Max 50000 characters for content"),
-	adLink: z.string().max(100, "Max 100 characters for ad link").optional()
+	adLink: z
+		.string()
+		.max(100, "Max 100 characters for ad link")
+		.optional()
+		.nullable()
 });
