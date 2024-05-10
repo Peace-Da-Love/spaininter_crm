@@ -36,7 +36,11 @@ export const schema = z.object({
 		.nonempty("City is required")
 		.min(2, "Min 2 characters for city")
 		.max(30, "Max 30 characters for city"),
-	ad_link: z.string().max(100, "Max 100 characters for ad link").optional(),
+	ad_link: z
+		.string()
+		.max(100, "Max 100 characters for ad link")
+		.optional()
+		.nullable(),
 	category_id: z.string().nonempty("Category is required"),
 	poster_link: z.string(),
 	translations: z.array(newsFormSchema)

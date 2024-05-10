@@ -122,14 +122,6 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 									<TelegramLink value={field.value} onChange={field.onChange} />
 								)}
 							/>
-							{/*<TextField*/}
-							{/*	{...register("adLink", {})}*/}
-							{/*	placeholder='Telegram ad link'*/}
-							{/*	defaultValue={data.data.data.news.adLink}*/}
-							{/*	error={!!errors?.adLink}*/}
-							{/*	helperText={errors?.adLink?.message}*/}
-							{/*	fullWidth*/}
-							{/*/>*/}
 						</Box>
 						<Box mb={"20px"} maxWidth={600}>
 							<TextField

@@ -26,6 +26,7 @@ import { useRef, useState } from "react";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 import { MarkdownEditor } from "@/features/markdown-editor";
 import { useLanguagesStore } from "@/app/store";
+import { TelegramLink } from "@/features/edit-news/ui/telegram-link";
 
 export const NewsForm = () => {
 	const navigate = useNavigate();
@@ -79,7 +80,7 @@ export const NewsForm = () => {
 		}
 		const editedData = {
 			...data,
-			add_link: data.ad_link ?? null,
+			add_link: data.ad_link,
 			category_id: Number(data.category_id)
 		};
 
@@ -121,13 +122,13 @@ export const NewsForm = () => {
 						/>
 					</Box>
 					<Box mb='20px'>
-						<TextField
-							{...register("ad_link")}
-							placeholder='Telegram ad link'
-							defaultValue={""}
-							error={!!errors?.ad_link}
-							helperText={errors?.ad_link?.message}
-							fullWidth
+						<Controller
+							name={"ad_link"}
+							control={control}
+							defaultValue={null}
+							render={({ field }) => (
+								<TelegramLink value={field.value} onChange={field.onChange} />
+							)}
 						/>
 					</Box>
 					<Box mb='20px'>
