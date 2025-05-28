@@ -68,11 +68,11 @@ export const AddChannel = () => {
 				onClick={handleOpen}
 				variant={"contained"}
 			>
-				Add channel <AddIcon />
+				Add City <AddIcon />
 			</Button>
 			<Dialog open={isOpen} onClose={handleClose}>
 				<form onSubmit={handleSubmit(onSubmit)}>
-					<DialogTitle>Add channel</DialogTitle>
+					<DialogTitle>Add CHANNEL</DialogTitle>
 					<DialogContent>
 						<Typography mb={pxToRem(15)}>Enter the channel ID</Typography>
 						<TextField
