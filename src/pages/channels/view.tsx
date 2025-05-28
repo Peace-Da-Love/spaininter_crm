@@ -2,8 +2,8 @@ import { Fragment } from "react";
 import { Helmet } from "react-helmet-async";
 import { pxToRem } from "@/shared/css-utils";
 import { Box, Typography } from "@mui/material";
-import { AddChannel } from "@/features/add-channel";
-import { ChannelsTable } from "@/widgets/channels-table";
+import { AddCity } from "@/features/add-city";
+import { CitiesTable } from "@/widgets/cities-table";
 
 export const ChannelsPage = () => {
 	return (
@@ -13,12 +13,12 @@ export const ChannelsPage = () => {
 			</Helmet>
 			<section>
 				<Typography variant='h1' mb={pxToRem(20)}>
-					Channels
+					Cities
 				</Typography>
-				<Box textAlign='right' mb={pxToRem(20)}>
-					<AddChannel />
+				<Box sx={{ textAlign: "right", marginBottom: pxToRem(20) }}>
+					<AddCity />
 				</Box>
-				<ChannelsTable />
+				<CitiesTable />
 			</section>
 		</Fragment>
 	);
