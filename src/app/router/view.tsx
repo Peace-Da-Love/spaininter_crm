@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { HomePage } from "@/pages/home";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 import { AuthPage } from "@/pages/auth";
-// import { AuthRoute } from "./privat-routes";
+import { AuthRoute } from "./privat-routes";
 import { LoginPage } from "@/pages/login";
 import { PanelLayout } from "@/widgets/panel-layout/view.tsx";
 import { NewsPage } from "@/pages/news";
@@ -20,7 +20,7 @@ export const Router = () => {
 		<BrowserRouter>
 			<Routes>
 				<Route element={<PageLayout />}>
-					{/* <Route element={<AuthRoute />}> */}
+					<Route element={<AuthRoute />}>
 						<Route element={<PanelLayout />}>
 							<Route path={"/"} element={<HomePage />} />
 							<Route path={"/news"} element={<NewsPage />} />
@@ -35,7 +35,7 @@ export const Router = () => {
 							<Route path={"/category/:id"} element={<EditCategoryPage />} />
 							<Route path={"/channels"} element={<ChannelsPage />} />
 						</Route>
-					{/* </Route> */}
+					</Route>
 					<Route path={"/auth"} element={<AuthPage />} />
 					<Route path={"/login"} element={<LoginPage />} />
 					<Route path={"*"} element={<NotFoundPage />} />
