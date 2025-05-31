@@ -20,7 +20,8 @@ import {
 	DialogActions,
 	Typography,
 	CircularProgress,
-	TextField
+	TextField,
+	IconButton
 } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 import AddIcon from "@mui/icons-material/Add";
@@ -125,6 +126,19 @@ export const CitiesTable = () => {
 		}
 	});
 
+	const { mutate: deletePhotoAndLinks, isPending: isDeletePhotoPending } =
+		useMutation({
+			mutationFn: (cityId: string) => citiesModel.deletePhotoAndLinks(cityId),
+			onSuccess: () => {
+				toast.success("Photo and links deleted successfully");
+				queryClient.invalidateQueries({ queryKey: ["cities-key"] });
+			},
+			onError: error => {
+				console.error("Failed to delete photo and links:", error);
+				toast.error("Failed to delete photo and links");
+			}
+		});
+
 	const handleChangePage = (_event: unknown, newPage: number) => {
 		setPage(newPage + 1);
 	};
@@ -207,7 +221,25 @@ export const CitiesTable = () => {
 								data.data.data.rows.map((city: City) => (
 									<TableRow hover key={city.id}>
 										<TableCell>{city.id}</TableCell>
-										<TableCell>{city.name}</TableCell>
+										<TableCell>
+											<Box display='flex' alignItems='center' gap={pxToRem(10)}>
+												{city.name}
+												<IconButton
+													size='small'
+													color='error'
+													onClick={() =>
+														deletePhotoAndLinks(city.id.toString())
+													}
+													disabled={isDeletePhotoPending}
+												>
+													{isDeletePhotoPending ? (
+														<CircularProgress size={20} />
+													) : (
+														<DeleteIcon />
+													)}
+												</IconButton>
+											</Box>
+										</TableCell>{" "}
 										<TableCell>
 											{city.photo_url ? (
 												<img
@@ -314,7 +346,6 @@ export const CitiesTable = () => {
 				)}
 			</TableContainer>
 
-			{/* Dialog для добавления ссылки */}
 			<Dialog open={addLinkOpen !== null} onClose={() => setAddLinkOpen(null)}>
 				<form onSubmit={handleSubmitLink(onSubmitLink)}>
 					<DialogTitle>Add Link to City</DialogTitle>
@@ -344,7 +375,6 @@ export const CitiesTable = () => {
 				</form>
 			</Dialog>
 
-			{/* Dialog для изменения фото */}
 			<Dialog open={changePhotoOpen !== null} onClose={handleClosePhoto}>
 				<form onSubmit={handleSubmitPhoto(onSubmitPhoto)}>
 					<DialogTitle>Change Photo for City</DialogTitle>
