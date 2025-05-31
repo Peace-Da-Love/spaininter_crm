@@ -28,5 +28,7 @@ export const citiesModel = {
 			headers: { "Content-Type": "multipart/form-data" }
 		}),
 	deleteLink: (cityId: string, linkId: string) =>
-		$api.delete(`/cities/${cityId}/links?linkId=${linkId}`)
+		$api.delete(`/cities/${cityId}/links?linkId=${linkId}`),
+	deletePhotoAndLinks: (cityId: string) =>
+		$api.delete(`/cities/${cityId}/photo`)
 };
