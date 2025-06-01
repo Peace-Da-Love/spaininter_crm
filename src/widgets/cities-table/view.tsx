@@ -20,7 +20,8 @@ import {
 	DialogActions,
 	Typography,
 	CircularProgress,
-	TextField
+	TextField,
+	IconButton
 } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
 import AddIcon from "@mui/icons-material/Add";
@@ -125,6 +126,19 @@ export const CitiesTable = () => {
 		}
 	});
 
+	const { mutate: deletePhotoAndLinks, isPending: isDeletePhotoPending } =
+		useMutation({
+			mutationFn: (cityId: string) => citiesModel.deletePhotoAndLinks(cityId),
+			onSuccess: () => {
+				toast.success("Photo and links deleted successfully");
+				queryClient.invalidateQueries({ queryKey: ["cities-key"] });
+			},
+			onError: error => {
+				console.error("Failed to delete photo and links:", error);
+				toast.error("Failed to delete photo and links");
+			}
+		});
+
 	const handleChangePage = (_event: unknown, newPage: number) => {
 		setPage(newPage + 1);
 	};
@@ -204,91 +218,121 @@ export const CitiesTable = () => {
 					<TableBody>
 						{data && !isLoading ? (
 							data.data.data.rows.length > 0 ? (
-								data.data.data.rows.map((city: City) => (
-									<TableRow hover key={city.id}>
-										<TableCell>{city.id}</TableCell>
-										<TableCell>{city.name}</TableCell>
-										<TableCell>
-											{city.photo_url ? (
-												<img
-													src={`${BASE_URL}${city.photo_url}`}
-													alt={city.name}
-													style={{
-														width: "80px",
-														height: "80px",
-														objectFit: "cover",
-														borderRadius: "8px"
-													}}
-													onError={e =>
-														console.log(
-															"Image load error for:",
-															city.photo_url,
-															e
-														)
-													}
-												/>
-											) : (
-												"No photo"
-											)}
-										</TableCell>
-										<TableCell>
-											<Box
-												display='flex'
-												flexDirection='column'
-												gap={pxToRem(5)}
-											>
-												{city.links.map(link => (
-													<Box
-														key={link.id}
-														display='flex'
-														alignItems='center'
-														gap={pxToRem(10)}
+								[...data.data.data.rows] 
+									.sort((a, b) => a.name.localeCompare(b.name))
+									.map((city: City) => (
+										<TableRow hover key={city.id}>
+											<TableCell>{city.id}</TableCell>
+											<TableCell>
+												<Box
+													display='flex'
+													alignItems='center'
+													gap={pxToRem(10)}
+												>
+													{city.name}
+													<IconButton
+														size='small'
+														color='error'
+														onClick={() =>
+															deletePhotoAndLinks(city.id.toString())
+														}
+														disabled={isDeletePhotoPending}
 													>
-														<Link
-															href={link.url}
-															target='_blank'
-															sx={{ color: "#434C6F" }}
-														>
-															{link.name.length > 30
-																? `${link.name.slice(0, 30)}...`
-																: link.name}
-														</Link>
-														<Button
-															size='small'
-															color='error'
-															onClick={() =>
-																deleteLink({
-																	cityId: city.id.toString(),
-																	linkId: link.id
-																})
-															}
-														>
+														{isDeletePhotoPending ? (
+															<CircularProgress size={20} />
+														) : (
 															<DeleteIcon />
-														</Button>
-													</Box>
-												))}
-											</Box>
-										</TableCell>
-										<TableCell>
-											<Box display='flex' alignItems='center' gap={pxToRem(10)}>
-												<Button
-													variant='outlined'
-													size='small'
-													onClick={() => setChangePhotoOpen(city.id.toString())}
+														)}
+													</IconButton>
+												</Box>
+											</TableCell>{" "}
+											<TableCell>
+												{city.photo_url ? (
+													<img
+														src={`${BASE_URL}${city.photo_url}`}
+														alt={city.name}
+														style={{
+															width: "80px",
+															height: "80px",
+															objectFit: "cover",
+															borderRadius: "8px"
+														}}
+														onError={e =>
+															console.log(
+																"Image load error for:",
+																city.photo_url,
+																e
+															)
+														}
+													/>
+												) : (
+													"No photo"
+												)}
+											</TableCell>
+											<TableCell>
+												<Box
+													display='flex'
+													flexDirection='column'
+													gap={pxToRem(5)}
 												>
-													<EditIcon /> Change Photo
-												</Button>
-												<Button
-													variant='contained'
-													size='small'
-													onClick={() => setAddLinkOpen(city.id.toString())}
+													{city.links.map(link => (
+														<Box
+															key={link.id}
+															display='flex'
+															alignItems='center'
+															gap={pxToRem(10)}
+														>
+															<Link
+																href={link.url}
+																target='_blank'
+																sx={{ color: "#434C6F" }}
+															>
+																{link.name.length > 30
+																	? `${link.name.slice(0, 30)}...`
+																	: link.name}
+															</Link>
+															<Button
+																size='small'
+																color='error'
+																onClick={() =>
+																	deleteLink({
+																		cityId: city.id.toString(),
+																		linkId: link.id
+																	})
+																}
+															>
+																<DeleteIcon />
+															</Button>
+														</Box>
+													))}
+												</Box>
+											</TableCell>
+											<TableCell>
+												<Box
+													display='flex'
+													alignItems='center'
+													gap={pxToRem(10)}
 												>
-													<AddIcon /> Add Link
-												</Button>
-											</Box>
-										</TableCell>
-									</TableRow>
-								))
+													<Button
+														variant='outlined'
+														size='small'
+														onClick={() =>
+															setChangePhotoOpen(city.id.toString())
+														}
+													>
+														<EditIcon /> Change Photo
+													</Button>
+													<Button
+														variant='contained'
+														size='small'
+														onClick={() => setAddLinkOpen(city.id.toString())}
+													>
+														<AddIcon /> Add Link
+													</Button>
+												</Box>
+											</TableCell>
+										</TableRow>
+									))
 							) : (
 								<TableRow>
 									<TableCell colSpan={5} align='center'>
@@ -314,7 +358,6 @@ export const CitiesTable = () => {
 				)}
 			</TableContainer>
 
-			{/* Dialog для добавления ссылки */}
 			<Dialog open={addLinkOpen !== null} onClose={() => setAddLinkOpen(null)}>
 				<form onSubmit={handleSubmitLink(onSubmitLink)}>
 					<DialogTitle>Add Link to City</DialogTitle>
@@ -344,7 +387,6 @@ export const CitiesTable = () => {
 				</form>
 			</Dialog>
 
-			{/* Dialog для изменения фото */}
 			<Dialog open={changePhotoOpen !== null} onClose={handleClosePhoto}>
 				<form onSubmit={handleSubmitPhoto(onSubmitPhoto)}>
 					<DialogTitle>Change Photo for City</DialogTitle>
