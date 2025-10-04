@@ -131,18 +131,6 @@ export const NewsForm = () => {
 							)}
 						/>
 					</Box>
-					<Box mb='20px'>
-						<TextField
-							{...register("telegramShortText")}
-							placeholder='Telegram short text'
-							defaultValue={""}
-							minRows={3}
-							multiline
-							error={!!errors?.telegramShortText}
-							helperText={errors?.telegramShortText?.message}
-							fullWidth
-						/>
-					</Box>
 					<Controller
 						render={({ field: { onChange } }) => (
 							<ImageDropZone
