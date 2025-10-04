@@ -34,4 +34,5 @@ export interface UpdateNewsDto {
 	title?: string | undefined;
 	description?: string | undefined;
 	content?: string | undefined;
+	adLink?: string | null | undefined;
 }
