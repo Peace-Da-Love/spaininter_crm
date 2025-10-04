@@ -80,12 +80,16 @@ export const NewsForm = () => {
 		}
 		const editedData = {
 			...data,
-			add_link: data.ad_link,
+			ad_link: data.ad_link ?? null,
 			category_id: Number(data.category_id)
 		};
 
 		mutate(editedData);
 	};
+	
+	if (!languages || languages.length === 0) {
+		return <CircularProgress />; 
+	  }
 
 	return (
 		<Box>
@@ -247,7 +251,7 @@ export const NewsForm = () => {
 						{errors.translations?.message}
 					</Typography>
 				)}
-
+				
 				<Button type='submit' disabled={isPending} variant='contained'>
 					{isPending ? (
 						<CircularProgress size={24} color='inherit' />
