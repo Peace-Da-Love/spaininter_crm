@@ -29,10 +29,17 @@ export interface IGetNewsResponse extends IResponse {
 }
 
 export interface UpdateNewsDto {
-	newsId: number;
 	languageId: number;
 	title?: string | undefined;
 	description?: string | undefined;
 	content?: string | undefined;
 	adLink?: string | null | undefined;
+}
+// For updating translations - only changed fields
+export interface UpdateTranslationDto {
+	languageId: number;
+	title?: string;
+	description?: string;
+	content?: string;
+	adLink?: string | null;
 }

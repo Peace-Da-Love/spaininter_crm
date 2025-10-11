@@ -2,9 +2,10 @@ import { FC, Fragment, useRef, useState, useEffect } from "react";
 import { LanguageSelection } from "@/features/language-selection";
 import { TelegramLink } from "./ui/telegram-link";
 import { useLanguagesStore } from "@/app/store";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { newsModel, UpdateNewsDto } from "@/app/models/news-model";
-import { Box, Button, CircularProgress, TextField, Chip, Alert } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { newsModel } from "@/app/models/news-model";
+import { UpdateTranslationDto } from "@/app/models/news-model/types";
+import { Box, Button, CircularProgress, TextField, Chip, Alert, IconButton, Typography } from "@mui/material";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { schema } from "./model.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,8 @@ import { MDXEditorMethods } from "@mdxeditor/editor";
 import { useToast } from "@/shared/hooks";
 import { useNavigate } from "react-router-dom";
 import { Loading } from "./loading.tsx";
+import { PhotoChangeDialog } from "./ui/photo-change-dialog";
+import EditIcon from "@mui/icons-material/Edit";
 
 type Props = {
 	newsId: number;
@@ -40,6 +43,9 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 	const [allLanguagesData, setAllLanguagesData] = useState<AllLanguagesData>({});
 	const [changedLanguages, setChangedLanguages] = useState<Set<number>>(new Set());
 	const [originalData, setOriginalData] = useState<AllLanguagesData>({});
+	const [posterLink, setPosterLink] = useState<string>(""); // Only for display
+	const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+	const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState<boolean>(false);
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
 
 	const {
@@ -82,6 +88,11 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 					};
 				}
 			});
+			
+			// Set poster link once (it's the same for all languages)
+			if (results[0]?.data?.data?.news?.posterLink) {
+				setPosterLink(results[0].data.data.news.posterLink);
+			}
 			
 			setAllLanguagesData(allData);
 			setOriginalData(allData);
@@ -138,28 +149,27 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 		setChangedLanguages(newChangedLanguages);
 	};
 
-	const { mutate: updateAllLanguages, isPending } = useMutation({
-		mutationKey: ["update-news-all"],
-		mutationFn: async (updates: UpdateNewsDto[]) => {
-			const promises = updates.map(dto => newsModel.update(dto));
-			await Promise.all(promises);
-		},
-		onSuccess: async () => {
-			toast.success("All languages updated successfully");
-			navigate("/news");
-		},
-		onError: () => {
-			toast.error("Failed to update some languages");
-		}
-	});
+	// Handler for photo dialog
+	const handlePhotoDialogOpen = () => {
+		setIsPhotoDialogOpen(true);
+	};
 
-	const onSubmit: SubmitHandler<z.infer<typeof schema>> = () => {
-		if (changedLanguages.size === 0) {
-			toast.info("No changes detected");
-			return;
-		}
+	const handlePhotoDialogClose = () => {
+		setIsPhotoDialogOpen(false);
+		setSelectedPhotoFile(null);
+	};
 
-		const updates: UpdateNewsDto[] = [];
+	const handlePhotoSave = (file: File) => {
+		setSelectedPhotoFile(file);
+		setIsPhotoDialogOpen(false);
+	};
+
+	
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	// Function to create translation updates
+	const createUpdates = (): UpdateTranslationDto[] => {
+		const updates: UpdateTranslationDto[] = [];
 		
 		changedLanguages.forEach(languageId => {
 			const currentData = allLanguagesData[languageId];
@@ -167,36 +177,152 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			
 			if (!currentData || !originalLangData) return;
 
-			const dto: UpdateNewsDto = {
-				newsId,
-				languageId,
-				title: currentData.title !== originalLangData.title ? currentData.title : undefined,
-				description: currentData.description !== originalLangData.description ? currentData.description : undefined,
-				content: currentData.content !== originalLangData.content ? currentData.content : undefined,
-				adLink: currentData.adLink !== originalLangData.adLink ? currentData.adLink : undefined
-			};
-
-			// Add update only if there are changes
-			const hasChanges = dto.title !== undefined || dto.description !== undefined || 
-							  dto.content !== undefined || dto.adLink !== undefined;
+			// Create object with changed fields
+			const dto: Partial<UpdateTranslationDto> = { languageId };
 			
-			if (hasChanges) {
-				updates.push(dto);
+			if (currentData.title !== originalLangData.title) {
+				dto.title = currentData.title;
+			}
+			if (currentData.description !== originalLangData.description) {
+				dto.description = currentData.description;
+			}
+			if (currentData.content !== originalLangData.content) {
+				dto.content = currentData.content;
+			}
+			if (currentData.adLink !== originalLangData.adLink) {
+				dto.adLink = currentData.adLink;
+			}
+
+			// Add only if there are changes (except languageId)
+			if (Object.keys(dto).length > 1) {
+				updates.push(dto as UpdateTranslationDto);
 			}
 		});
 
-		if (updates.length === 0) {
+		return updates;
+	};
+
+	const onSubmit: SubmitHandler<z.infer<typeof schema>> = async () => {
+		const hasLanguageChanges = changedLanguages.size > 0;
+		const hasPhotoFile = selectedPhotoFile !== null;
+
+		if (!hasLanguageChanges && !hasPhotoFile) {
 			toast.info("No changes detected");
 			return;
 		}
 
-		updateAllLanguages(updates);
+		setIsUpdating(true);
+
+		try {
+			// 1. First upload photo (if exists)
+			if (hasPhotoFile) {
+				const formData = new globalThis.FormData();
+				formData.append("photo", selectedPhotoFile);
+				await newsModel.updatePhoto(newsId, formData);
+			}
+
+			// 2. Then update translations (if there are changes)
+			if (hasLanguageChanges) {
+				const updates = createUpdates();
+				if (updates.length > 0) {
+					await newsModel.updateTranslations(newsId, updates);
+				}
+			}
+
+			toast.success("News updated successfully");
+			navigate("/news");
+		} catch (error) {
+			toast.error("Failed to update news");
+		} finally {
+			setIsUpdating(false);
+		}
 	};
 
 	const currentData = currentLang ? allLanguagesData[currentLang] : null;
 
 	return (
 		<Fragment>
+			{/* Photo Preview with Change Button */}
+			{!isLoading && !isError && (
+				<Box mb={3} maxWidth={400}>
+					<Box sx={{ position: "relative", display: "inline-block" }}>
+						{selectedPhotoFile ? (
+							// Show preview of selected file
+							<img
+								src={URL.createObjectURL(selectedPhotoFile)}
+								alt="Selected photo preview"
+								style={{
+									width: "300px",
+									height: "200px",
+									objectFit: "cover",
+									borderRadius: "8px",
+									border: "2px solid #4caf50"
+								}}
+							/>
+						) : posterLink ? (
+							// Show original photo
+							<img
+								src={posterLink}
+								alt="News poster"
+								style={{
+									width: "300px",
+									height: "200px",
+									objectFit: "cover",
+									borderRadius: "8px",
+									border: "1px solid #ddd"
+								}}
+							/>
+						) : (
+							// Show placeholder
+							<Box
+								sx={{
+									width: "300px",
+									height: "200px",
+									border: "2px dashed #ccc",
+									borderRadius: "8px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									backgroundColor: "#f9f9f9"
+								}}
+							>
+								<Typography color="text.secondary">No photo</Typography>
+							</Box>
+						)}
+						<IconButton
+							sx={{
+								position: "absolute",
+								top: "8px",
+								right: "8px",
+								backgroundColor: "rgba(255, 255, 255, 0.8)",
+								"&:hover": {
+									backgroundColor: "rgba(255, 255, 255, 0.9)"
+								}
+							}}
+							onClick={handlePhotoDialogOpen}
+						>
+							<EditIcon />
+						</IconButton>
+					</Box>
+					{selectedPhotoFile && (
+						<Box mt={1} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							<Typography variant="body2" color="success.main" sx={{ fontWeight: "bold" }}>
+								✓ New photo selected: {selectedPhotoFile.name}
+							</Typography>
+							<Button
+								size="small"
+								variant="outlined"
+								color="error"
+								onClick={() => setSelectedPhotoFile(null)}
+								sx={{ minWidth: "auto", padding: "2px 8px" }}
+							>
+								Remove
+							</Button>
+						</Box>
+					)}
+				</Box>
+			)}
+
 			{/* Show change indicators */}
 			{changedLanguages.size > 0 && (
 				<Alert severity="info" sx={{ mb: 2 }}>
@@ -292,20 +418,21 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 						</Box>
 
 						<Box sx={{ display: 'flex', gap: 2 }}>
-							<Button disabled={isPending} type='submit' variant='contained'>
-								{isPending ? (
+							<Button disabled={isUpdating} type='submit' variant='contained'>
+								{isUpdating ? (
 									<CircularProgress size={24} color='inherit' />
 								) : (
-									`Save Changes (${changedLanguages.size} language${changedLanguages.size !== 1 ? 's' : ''})`
+									`Save Changes (${changedLanguages.size} language${changedLanguages.size !== 1 ? 's' : ''}${selectedPhotoFile ? ', photo' : ''})`
 								)}
 							</Button>
 
 							<Button 
-								disabled={isPending || changedLanguages.size === 0}
+								disabled={isUpdating || (changedLanguages.size === 0 && !selectedPhotoFile)}
 								variant='outlined' 
 								onClick={() => {
 									setAllLanguagesData(originalData);
 									setChangedLanguages(new Set());
+									setSelectedPhotoFile(null);
 									if (currentLang && originalData[currentLang]) {
 										const originalLangData = originalData[currentLang];
 										reset(originalLangData);
@@ -315,7 +442,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 									}
 								}}
 							>
-								Reset Changes
+								Reset Changes{selectedPhotoFile ? ' & Photo' : ''}
 							</Button>
 						</Box>
 					</Box>
@@ -324,6 +451,14 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 
 			{isLoading && <Loading />}
 			{isError && <div>Error...</div>}
+
+			{/* Photo Change Dialog */}
+			<PhotoChangeDialog
+				isOpen={isPhotoDialogOpen}
+				onClose={handlePhotoDialogClose}
+				onSave={handlePhotoSave}
+				isPending={isUpdating}
+			/>
 		</Fragment>
 	);
 };
