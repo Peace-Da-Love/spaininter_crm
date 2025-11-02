@@ -21,13 +21,19 @@ import {
 	Separator,
 	tablePlugin,
 	thematicBreakPlugin,
-	toolbarPlugin
+	toolbarPlugin,
+	jsxPlugin,
+	type JsxComponentDescriptor
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
 import { IImageDto, imageModel } from "@/app/models/image-model";
-import { useRef } from "react";
+import { createContext, useRef } from "react";
 import { forwardRef, useImperativeHandle } from "react";
 import { FormControl, FormHelperText } from "@mui/material";
+import { InsertYouTubeButton, InsertTikTokButton } from "@/features/markdown-editor/components";
+import { JsxPlaceholder } from "./components/jsx-placeholder";
+
+export const MarkdownEditorContext = createContext<MDXEditorMethods | null>(null)
 
 type Props = {
 	onChange?: (value: string) => void;
@@ -39,6 +45,29 @@ type Props = {
 export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 	({ onChange, value, error, helperText, ...props }, ref) => {
 		const editorRef = useRef<MDXEditorMethods | null>(null);
+
+		// Normalize cases when users paste full YouTube URLs into the id prop
+		const extractYouTubeId = (input: string) => {
+			const trimmed = input.trim()
+			const match = trimmed.match(
+				/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+			)
+			if (match && match[1]) return match[1]
+		
+			const matchWatch = trimmed.match(/v=([A-Za-z0-9_-]{6,})/)
+			return matchWatch?.[1] ?? trimmed
+		}
+		
+
+		const sanitizeYouTubeTags = (markdown: string) =>
+			markdown.replace(
+				/<YouTube\s+id=["']([^"']+)["']\s*\/?>(?:\s*<\/YouTube>)?/g,
+				(_m, id) => {
+					const safeId = extractYouTubeId(id)
+					return `<YouTube id="${safeId}" />`
+				}
+			)
+		
 
 		const imageUploadHandler = async (file: File) => {
 			const formData = new FormData() as IImageDto;
@@ -59,6 +88,8 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 			focus: () => editorRef.current?.focus()
 		}));
 
+		const sanitizedMarkdown = sanitizeYouTubeTags(value ?? "");
+
 		return (
 			<FormControl
 				error={error}
@@ -68,13 +99,40 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 					width: "100%"
 				}}
 			>
+				<MarkdownEditorContext.Provider value={editorRef.current}
+				>
 				<MDXEditor
 					{...props}
-					markdown={value ?? ""}
-					onChange={onChange}
+					markdown={sanitizedMarkdown}
+					onChange={(md) => {
+						const sanitized = sanitizeYouTubeTags(md ?? "");
+						onChange?.(sanitized);
+					}}
 					className={"editor"}
 					plugins={[
-						diffSourcePlugin({}),
+						jsxPlugin({
+							jsxComponentDescriptors: [
+								{
+									name: "YouTube",
+									kind: "text",
+									props: [
+										{ name: "id", type: "string" }
+									],
+									hasChildren: false,
+									Editor: JsxPlaceholder,
+								} as JsxComponentDescriptor,
+								{
+									name: "TikTok", 
+									kind: "text",
+									props: [
+										{ name: "url", type: "string" }
+									],
+									hasChildren: false,
+									Editor: JsxPlaceholder,
+								} as JsxComponentDescriptor
+							]
+						}),
+						diffSourcePlugin({ viewMode: 'rich-text' }),
 						headingsPlugin(),
 						listsPlugin(),
 						quotePlugin(),
@@ -86,7 +144,6 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 						imagePlugin({
 							imageUploadHandler
 						}),
-						quotePlugin(),
 						toolbarPlugin({
 							toolbarContents: () => (
 								<DiffSourceToggleWrapper options={["rich-text", "source"]}>
@@ -100,12 +157,16 @@ export const MarkdownEditor = forwardRef<MDXEditorMethods, Props>(
 									<CreateLink />
 									<InsertImage />
 									<InsertTable />
+									<Separator />
+									<InsertYouTubeButton editorRef={editorRef} />
+									<InsertTikTokButton editorRef={editorRef} />
 								</DiffSourceToggleWrapper>
 							)
 						})
 					]}
 					ref={editorRef}
 				/>
+				</MarkdownEditorContext.Provider>
 				{error && <FormHelperText>{helperText}</FormHelperText>}
 			</FormControl>
 		);

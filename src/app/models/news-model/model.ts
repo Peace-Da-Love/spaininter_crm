@@ -48,7 +48,7 @@ class Model {
 		newsId: number,
 		updates: UpdateTranslationDto[]
 	): Promise<AxiosResponse<IResponse>> {
-		return $api.patch(`/news/${newsId}/translations`, { translations: updates }, {
+		return $api.patch(`/news/${newsId}/translations`, updates, {
 			headers: { "Content-Type": "application/json" }
 		});
 	}
