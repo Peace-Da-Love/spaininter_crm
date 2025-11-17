@@ -1,0 +1,2 @@
+export { SelectCity } from "./view";
+

@@ -36,7 +36,17 @@ export const schema = z.object({
 		.max(100, "Max 100 characters for ad link")
 		.optional()
 		.nullable(),
-	category_id: z.string().nonempty("Category is required"),
-	poster_link: z.string(),
+	category_id: z.string().optional(),
+	category_name: z
+		.string()
+		.nonempty("Category is required")
+		.refine(
+			val => {
+				// Может быть либо числом (ID), либо валидным именем категории
+				return /^\d+$/.test(val) || /^[a-z0-9_]{2,50}$/.test(val);
+			},
+			"Invalid category"
+		),
+	poster_link: z.string().min(1, "Poster image is required"),
 	translations: z.array(newsFormSchema)
 });

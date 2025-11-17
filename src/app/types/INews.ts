@@ -1,9 +1,11 @@
 export interface INews {
-	category_id?: number | null;
-	poster_link?: string | null;
-	province?: string | null;
-	city?: string | null;
-	translations?: INewsTranslations[] | null;
+	category_id?: number;
+	category_name?: string;
+	poster_link: string;
+	province: string;
+	city: string;
+	ad_link?: string | null;
+	translations: INewsTranslations[];
 }
 
 interface INewsTranslations {
