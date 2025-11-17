@@ -72,7 +72,6 @@ export const SelectCategory = forwardRef<HTMLDivElement, Props>(
 										<MenuItem
 											key={category.category_id}
 											value={category.category_id.toString()}
-											sx={{ textTransform: "capitalize" }}
 										>
 											{category.category_name}
 										</MenuItem>

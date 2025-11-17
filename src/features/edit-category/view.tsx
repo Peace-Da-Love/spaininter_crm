@@ -3,9 +3,7 @@ import {
 	Box,
 	Button,
 	Skeleton,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup
+	TextField
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { categoriesModel } from "@/app/models/categories-model";
@@ -13,7 +11,6 @@ import { pxToRem } from "@/shared/css-utils";
 import {
 	Controller,
 	SubmitHandler,
-	useFieldArray,
 	useForm
 } from "react-hook-form";
 import { schema } from "./model.ts";
@@ -32,7 +29,6 @@ export const EditCategory: FC<Props> = ({ categoryId }) => {
 	const toast = useToast();
 	const {
 		control,
-		watch,
 		handleSubmit,
 		setValue,
 		formState: { errors }
@@ -43,15 +39,7 @@ export const EditCategory: FC<Props> = ({ categoryId }) => {
 		queryKey: [`category-${categoryId}-key`, categoryId],
 		queryFn: () =>
 			categoriesModel.getCategory(categoryId).then(res => {
-				setValue(
-					"translations",
-					res.data.data.category.translations.map(value => {
-						return {
-							categoryName: value.categoryName,
-							languageId: value.languageId
-						};
-					})
-				);
+				setValue("category_name", res.data.data.category.category_name);
 				return res;
 			})
 	});
@@ -66,13 +54,6 @@ export const EditCategory: FC<Props> = ({ categoryId }) => {
 			toast.error("Failed to update category");
 		}
 	});
-	const languageId =
-		watch("languageId") || data?.data.data.category.translations[0].languageId;
-
-	const { fields } = useFieldArray({
-		name: "translations",
-		control
-	});
 
 	if (isLoading) {
 		return (
@@ -80,15 +61,6 @@ export const EditCategory: FC<Props> = ({ categoryId }) => {
 				<Skeleton
 					variant='rectangular'
 					width={400}
-					height={48}
-					sx={{
-						borderRadius: "4px",
-						marginBottom: pxToRem(20)
-					}}
-				/>
-				<Skeleton
-					variant='rectangular'
-					width={210}
 					height={56}
 					sx={{
 						borderRadius: "4px",
@@ -113,12 +85,9 @@ export const EditCategory: FC<Props> = ({ categoryId }) => {
 	}
 
 	const onSubmit: SubmitHandler<z.infer<typeof schema>> = data => {
-		const dto = {
+		const dto: UpdateCategoryDto = {
 			categoryId: Number(categoryId),
-			languageId: languageId as number,
-			categoryName: data.translations.find(
-				translation => translation.languageId === languageId
-			)?.categoryName as string
+			categoryName: data.category_name
 		};
 		mutate(dto);
 	};
@@ -126,70 +95,24 @@ export const EditCategory: FC<Props> = ({ categoryId }) => {
 	return (
 		<Box>
 			<form onSubmit={handleSubmit(onSubmit)}>
-				<Box mb={pxToRem(20)}>
+				<Box mb={pxToRem(20)} maxWidth={400}>
 					<Controller
-						name='languageId'
+						name='category_name'
 						control={control}
-						defaultValue={data?.data.data.category.translations[0].languageId}
-						render={({ field }) => {
-							return (
-								<ToggleButtonGroup
-									exclusive
-									{...field}
-									onChange={(
-										_event: React.MouseEvent<HTMLElement>,
-										newAlignment: number | null
-									) => {
-										if (newAlignment !== null) {
-											field.onChange(newAlignment);
-										}
-									}}
-									defaultValue={
-										data?.data.data.category.translations[0].languageId
-									}
-								>
-									{data?.data.data.category.translations?.map(value => {
-										return (
-											<ToggleButton
-												key={value.languageId}
-												value={value.languageId}
-											>
-												{value.languageCode}
-											</ToggleButton>
-										);
-									})}
-								</ToggleButtonGroup>
-							);
-						}}
+						defaultValue={data?.data.data.category.category_name || ""}
+						render={({ field }) => (
+							<TextField
+								{...field}
+								label='Category name'
+								placeholder='tech_news'
+								error={!!errors.category_name}
+								helperText={
+									errors.category_name?.message || "Lowercase, numbers, underscores only"
+								}
+								fullWidth
+							/>
+						)}
 					/>
-				</Box>
-				<Box mb={pxToRem(20)}>
-					{fields.map((value, index) => {
-						const langIndex = fields.findIndex(
-							lang => lang.languageId === languageId
-						);
-						if (langIndex === index) {
-							return (
-								<Controller
-									key={`${languageId}-${value.categoryName}`}
-									name={`translations.${index}.categoryName`}
-									control={control}
-									render={({ field }) => (
-										<TextField
-											{...field}
-											error={!!errors.translations?.[index]?.categoryName}
-											helperText={
-												errors.translations?.[index]?.categoryName?.message
-											}
-											sx={{
-												textTransform: "capitalize"
-											}}
-										/>
-									)}
-								/>
-							);
-						}
-					})}
 				</Box>
 				<Button type='submit' variant='contained'>
 					Save

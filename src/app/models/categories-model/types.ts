@@ -13,27 +13,20 @@ export interface Category {
 }
 
 export interface CreateCategoryDto {
-	translations: {
-		language_id: number;
-		category_name: string;
-	}[];
+	category_name: string;
 }
 
 export interface UpdateCategoryDto {
 	categoryId: number;
-	languageId: number;
 	categoryName: string;
 }
 
 export interface ICategoryResponse extends IResponse {
 	data: {
 		category: {
-			id: number;
-			translations: {
-				languageId: number;
-				languageCode: string;
-				categoryName: string;
-			}[];
+			category_id: number;
+			category_name: string;
+			createdAt: string;
 		};
 	};
 }

@@ -57,9 +57,6 @@ export const CategoriesTable = () => {
 									<TableCell>{category.category_id}</TableCell>
 									<TableCell>
 										<Typography
-											sx={{
-												textTransform: "capitalize"
-											}}
 											variant='body1'
 										>
 											{category.category_name}
