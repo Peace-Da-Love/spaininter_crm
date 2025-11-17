@@ -1,59 +1,69 @@
 import { useDropzone } from "react-dropzone";
-import { Box, ButtonBase, CircularProgress, Typography } from "@mui/material";
+import { Box, ButtonBase, Typography } from "@mui/material";
 import { pxToRem } from "@/shared/css-utils";
-import { FC, useState } from "react";
-import { IImageDto, imageModel } from "@/app/models/image-model";
+import { FC, useState, useEffect } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToast } from "@/shared/hooks";
 
 type Props = {
-	handleImageLink: (url: string | null) => void;
+	onFileSelect: (file: File | null) => void;
 	error: boolean;
 	message?: string;
 };
 
 export const ImageDropZone: FC<Props> = ({
-	handleImageLink,
+	onFileSelect,
 	error,
 	message
 }) => {
-	const [imageLink, setImageLink] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const { warning } = useToast();
+
+	// Create preview URL when file is selected
+	useEffect(() => {
+		if (selectedFile) {
+			const url = URL.createObjectURL(selectedFile);
+			setPreviewUrl(url);
+			return () => {
+				URL.revokeObjectURL(url);
+			};
+		} else {
+			setPreviewUrl(null);
+		}
+	}, [selectedFile]);
+
 	const { getRootProps, getInputProps } = useDropzone({
 		accept: {
 			"image/png": [".png"],
 			"image/jpeg": [".jpeg"],
 			"image/webp": [".webp"]
 		},
-		// maxSize: 0.5,
 		maxFiles: 1,
 		multiple: false,
-		onDrop: async files => {
-			try {
-				setIsLoading(true);
-				const file = files[0];
-				if (file.size > 5000000) throw new Error("File size is too large");
-				const formData = new FormData() as IImageDto;
-				formData.append("file", file);
-				const {
-					data: { url }
-				} = await imageModel(formData);
-				setImageLink(url);
-				handleImageLink(url);
-				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-				// @ts-expect-error
-			} catch (err: never) {
-				warning(err.toString());
-			} finally {
-				setIsLoading(false);
+		onDrop: files => {
+			const file = files[0];
+			if (!file) return;
+
+			// Validate file size
+			if (file.size > 5000000) {
+				warning("File size is too large (max 5MB)");
+				return;
 			}
+
+			setSelectedFile(file);
+			onFileSelect(file);
 		}
 	});
 
+	const handleRemove = () => {
+		setSelectedFile(null);
+		onFileSelect(null);
+	};
+
 	return (
 		<Box sx={{ marginBottom: pxToRem(20) }}>
-			{!imageLink && (
+			{!selectedFile && (
 				<Box sx={{ cursor: "pointer", userSelect: "none" }}>
 					<Typography gutterBottom>Poster</Typography>
 					<Box
@@ -73,31 +83,6 @@ export const ImageDropZone: FC<Props> = ({
 							className: "dropzone"
 						})}
 					>
-						{isLoading && (
-							<Box
-								sx={{
-									background: "#fff",
-									position: "absolute",
-									top: 0,
-									left: 0,
-									width: "100%",
-									height: "100%"
-								}}
-							>
-								<Box
-									sx={{
-										position: "absolute",
-										top: "50%",
-										left: "50%",
-										transform: "translate(-50%, -50%)",
-										width: "30px",
-										height: "30px"
-									}}
-								>
-									<CircularProgress size={30} />
-								</Box>
-							</Box>
-						)}
 						<input {...getInputProps({})} />
 						<Typography
 							sx={{
@@ -109,25 +94,26 @@ export const ImageDropZone: FC<Props> = ({
 					</Box>
 				</Box>
 			)}
-			{imageLink && (
+			{selectedFile && previewUrl && (
 				<Box>
 					<Typography gutterBottom>Image preview</Typography>
 					<Box
 						sx={{
-							width: "100%",
-							paddingTop: "100%",
-							overflow: "hidden",
 							position: "relative",
-							"& > img": {
-								width: "100%",
-								height: "100%",
-								objectFit: "cover",
-								position: "absolute",
-								top: 0,
-								left: 0
-							}
+							display: "inline-block"
 						}}
 					>
+						<img
+							src={previewUrl}
+							alt='preview'
+							style={{
+								width: "300px",
+								height: "200px",
+								objectFit: "cover",
+								borderRadius: "8px",
+								border: "2px solid #4caf50"
+							}}
+						/>
 						<ButtonBase
 							sx={{
 								position: "absolute",
@@ -138,15 +124,18 @@ export const ImageDropZone: FC<Props> = ({
 								background: "rgba(227,227,227,0.5)",
 								borderRadius: "50%"
 							}}
-							onClick={() => {
-								setImageLink(null);
-								handleImageLink(null);
-							}}
+							onClick={handleRemove}
 						>
 							<CloseIcon />
 						</ButtonBase>
-						<img src={imageLink} alt='preview' />
 					</Box>
+					{selectedFile && (
+						<Box mt={1}>
+							<Typography variant="body2" color="text.secondary">
+								Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+							</Typography>
+						</Box>
+					)}
 				</Box>
 			)}
 			{message && (
