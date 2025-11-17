@@ -18,9 +18,15 @@ interface CitiesResponse extends IResponse {
 	};
 }
 
+interface CreateCityResponse extends IResponse {
+	data: City;
+}
+
 export const citiesModel = {
 	getCities: (params: IPaginationParams & { search?: string }) =>
 		$api.get<CitiesResponse>("/cities", { params }),
+	create: (dto: { name: string }) =>
+		$api.post<CreateCityResponse>("/cities", dto),
 	addLink: (dto: { name: string; url: string; cityId: string }) =>
 		$api.post("/cities/links", dto),
 	updatePhoto: (cityId: string, formData: FormData) =>
