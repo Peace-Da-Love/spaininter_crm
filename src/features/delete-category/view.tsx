@@ -28,10 +28,10 @@ export const DeleteCategory: FC<Props> = ({ categoryId }) => {
 			categoriesModel.deleteCategory(categoryId),
 		onSuccess: async () => {
 			setIsOpen(false);
-			toast.success("Admin deleted successfully");
+			toast.success("Category deleted successfully");
 		},
 		onError: () => {
-			toast.error("Failed to delete admin");
+			toast.error("Failed to delete category");
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({ queryKey: ["get-categories-table-key"] });
