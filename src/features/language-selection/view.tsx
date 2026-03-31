@@ -7,12 +7,14 @@ type Props = {
 	value?: number | undefined;
 	onChange: (value: number) => void;
 	defaultValue?: number;
+	statusByLanguageId?: Record<number, "complete" | "partial" | "empty">;
 };
 
 export const LanguageSelection: FC<Props> = ({
 	value,
 	onChange,
-	defaultValue
+	defaultValue,
+	statusByLanguageId
 }) => {
 	const { languages } = useLanguagesStore();
 
@@ -35,8 +37,36 @@ export const LanguageSelection: FC<Props> = ({
 				defaultValue={defaultValue}
 			>
 				{languages?.map(value => {
+					const status = statusByLanguageId?.[value.language_id];
 					return (
-						<ToggleButton key={value.language_id} value={value.language_id}>
+						<ToggleButton
+							key={value.language_id}
+							value={value.language_id}
+							sx={{
+								backgroundColor:
+									status === "complete"
+										? "#e8f5e9"
+										: status === "partial"
+											? "#fff3e0"
+											: undefined,
+								"&:hover": {
+									backgroundColor:
+										status === "complete"
+											? "#dcedc8"
+											: status === "partial"
+												? "#ffe0b2"
+												: undefined
+								},
+								"&.Mui-selected": {
+									backgroundColor:
+										status === "complete"
+											? "#c8e6c9"
+											: status === "partial"
+												? "#ffd59f"
+												: undefined
+								}
+							}}
+						>
 							{value.language_code}
 						</ToggleButton>
 					);

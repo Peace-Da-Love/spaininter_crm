@@ -8,6 +8,7 @@ export interface IGetNewsParams {
 interface NewsItem {
 	newsId: number;
 	posterLink: string;
+	province?: string;
 	city: string;
 	title: string;
 	description: string;
@@ -42,4 +43,25 @@ export interface UpdateTranslationDto {
 	description?: string;
 	content?: string;
 	adLink?: string | null;
+}
+
+export type AdminNewsTranslation = {
+	language_id: number;
+	title: string;
+	description: string;
+	content: string;
+};
+
+export interface UpdateAdminNewsDto {
+	category_id?: number;
+	category_name?: string;
+	poster_link?: string;
+	province?: string;
+	city?: string;
+	ad_link?: string | null;
+	translations: AdminNewsTranslation[];
+}
+
+export interface UpdateNewsStatusDto {
+	status: "pending" | "approved" | "deleted";
 }

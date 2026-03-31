@@ -13,6 +13,7 @@ import { CategoriesPage } from "src/pages/categories";
 import { CreateCategoryPage } from "@/pages/create-category";
 import { EditCategoryPage } from "@/pages/edit-category";
 import { EditNewsPage } from "@/pages/edit-news";
+import { ReviewNewsPage } from "@/pages/review-news";
 import { ChannelsPage } from "@/pages/channels";
 
 export const Router = () => {
@@ -25,6 +26,7 @@ export const Router = () => {
 							<Route path={"/"} element={<HomePage />} />
 							<Route path={"/news"} element={<NewsPage />} />
 							<Route path={"/news/:id"} element={<EditNewsPage />} />
+							<Route path={"/news/review/:id"} element={<ReviewNewsPage />} />
 							<Route path={"/create-news"} element={<CreateNewsPage />} />
 							<Route path={"/admins"} element={<AdminsPage />} />
 							<Route path={"/categories"} element={<CategoriesPage />} />

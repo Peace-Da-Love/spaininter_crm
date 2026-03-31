@@ -1,6 +1,13 @@
 import { INews, IResponse } from "@/app/types";
 import { $api } from "@/app/api";
-import { IGetNewsParams, IGetNewsResponse, UpdateNewsDto, UpdateTranslationDto } from "./types.ts";
+import {
+	IGetNewsParams,
+	IGetNewsResponse,
+	UpdateNewsDto,
+	UpdateTranslationDto,
+	UpdateAdminNewsDto,
+	UpdateNewsStatusDto
+} from "./types.ts";
 import { AxiosResponse } from "axios";
 
 class Model {
@@ -49,6 +56,25 @@ class Model {
 		updates: UpdateTranslationDto[]
 	): Promise<AxiosResponse<IResponse>> {
 		return $api.patch(`/news/${newsId}/translations`, updates, {
+			headers: { "Content-Type": "application/json" }
+		});
+	}
+
+	// Admin-only update for pending news
+	public async updateByAdmin(
+		newsId: number,
+		data: UpdateAdminNewsDto
+	): Promise<AxiosResponse<IResponse>> {
+		return $api.patch(`/news/admin/${newsId}`, data, {
+			headers: { "Content-Type": "application/json" }
+		});
+	}
+
+	public async updateStatus(
+		newsId: number,
+		status: UpdateNewsStatusDto
+	): Promise<AxiosResponse<IResponse>> {
+		return $api.patch(`/news/${newsId}/status`, status, {
 			headers: { "Content-Type": "application/json" }
 		});
 	}

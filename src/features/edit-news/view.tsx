@@ -1,4 +1,4 @@
-import { FC, Fragment, useRef, useState, useEffect } from "react";
+import { FC, Fragment, useRef, useState, useEffect, useMemo } from "react";
 import { LanguageSelection } from "@/features/language-selection";
 import { TelegramLink } from "./ui/telegram-link";
 import { useLanguagesStore } from "@/app/store";
@@ -75,23 +75,29 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			
 			// Collect data for all languages
 			const allData: AllLanguagesData = {};
+			let nextPosterLink = "";
 			languages.forEach((lang, index) => {
-				const result = results[index];
-				if (result && result.data && result.data.data) {
-					allData[lang.language_id] = {
-						title: result.data.data.news.title,
-						description: result.data.data.news.description,
-						content: result.data.data.news.content
-							.replace(/\\n/g, "\n\n")
-							.replace(/\\|/g, ""),
-						adLink: result.data.data.news.adLink
-					};
+				const news = results[index]?.data?.data?.news;
+				if (!news) {
+					throw new Error("News data is missing in response");
+				}
+				allData[lang.language_id] = {
+					title: news.title ?? "",
+					description: news.description ?? "",
+					content: (news.content ?? "")
+						.replace(/\\n/g, "\n\n")
+						.replace(/\\|/g, ""),
+					adLink: news.adLink ?? null
+				};
+
+				if (!nextPosterLink && news.posterLink) {
+					nextPosterLink = news.posterLink;
 				}
 			});
 			
 			// Set poster link once (it's the same for all languages)
-			if (results[0]?.data?.data?.news?.posterLink) {
-				setPosterLink(results[0].data.data.news.posterLink);
+			if (nextPosterLink) {
+				setPosterLink(nextPosterLink);
 			}
 			
 			setAllLanguagesData(allData);
@@ -111,6 +117,36 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 		},
 		enabled: !!languages && languages.length > 0
 	});
+
+	const statusByLanguageId = useMemo(() => {
+		const statusMap: Record<number, "complete" | "partial" | "empty"> = {};
+		const isFilled = (value?: string | null) =>
+			typeof value === "string" && value.trim().length > 0;
+
+		languages.forEach(lang => {
+			const data = allLanguagesData[lang.language_id];
+			if (!data) {
+				statusMap[lang.language_id] = "empty";
+				return;
+			}
+
+			const filledCount = [
+				isFilled(data.title),
+				isFilled(data.description),
+				isFilled(data.content)
+			].filter(Boolean).length;
+
+			if (filledCount === 0) {
+				statusMap[lang.language_id] = "empty";
+			} else if (filledCount === 3) {
+				statusMap[lang.language_id] = "complete";
+			} else {
+				statusMap[lang.language_id] = "partial";
+			}
+		});
+
+		return statusMap;
+	}, [languages, allLanguagesData]);
 
 	// Effect for switching between languages
 	useEffect(() => {
@@ -208,6 +244,24 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 
 		if (!hasLanguageChanges && !hasPhotoFile) {
 			toast.info("No changes detected");
+			return;
+		}
+
+		const partialLanguages = languages.filter(lang => {
+			const data = allLanguagesData[lang.language_id];
+			const title = (data?.title ?? "").trim();
+			const description = (data?.description ?? "").trim();
+			const content = (data?.content ?? "").trim();
+			const filledCount = [title, description, content].filter(Boolean).length;
+			return filledCount > 0 && filledCount < 3;
+		});
+
+		if (partialLanguages.length > 0) {
+			toast.error(
+				`Complete or clear translations for: ${partialLanguages
+					.map(lang => lang.language_code)
+					.join(", ")}`
+			);
 			return;
 		}
 
@@ -336,6 +390,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				value={currentLang || languages?.[0]?.language_id}
 				onChange={value => setCurrentLang(value)}
 				defaultValue={languages?.[0]?.language_id}
+				statusByLanguageId={statusByLanguageId}
 			/>
 
 			<form onSubmit={handleSubmit(onSubmit)}>

@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import {
 	Autocomplete,
 	CircularProgress,
@@ -19,6 +19,12 @@ export const SelectCity = forwardRef<HTMLDivElement, Props>(
 	({ error, helperText, value, onChange, ...props }, ref) => {
 		const [search, setSearch] = useState<string>("");
 
+		useEffect(() => {
+			if (value && value.length >= 3) {
+				setSearch(value);
+			}
+		}, [value]);
+
 		const { data, isLoading, isError } = useQuery({
 			queryKey: ["cities-key", { page: 1, limit: 50, search }],
 			queryFn: () => citiesModel.getCities({ page: 1, limit: 50, search }),
@@ -30,13 +36,29 @@ export const SelectCity = forwardRef<HTMLDivElement, Props>(
 		}
 
 		const cities = data?.data.data.rows || [];
-		const selectedCity = cities.find(city => city.name === value) || null;
+		const options = useMemo(() => {
+			if (!value) return cities;
+			const hasValue = cities.some(city => city.name === value);
+			if (hasValue) return cities;
+			return [
+				{
+					id: "current",
+					name: value,
+					photo_url: null,
+					links: [],
+					created_at: "",
+					updated_at: ""
+				},
+				...cities
+			];
+		}, [cities, value]);
+		const selectedCity = options.find(city => city.name === value) || null;
 
 		return (
 			<Autocomplete
 				{...props}
 				ref={ref}
-				options={cities}
+				options={options}
 				getOptionLabel={option => option.name}
 				onInputChange={(_, newInputValue) => {
 					setSearch(newInputValue);
