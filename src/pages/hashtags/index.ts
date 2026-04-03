@@ -1,0 +1,1 @@
+export { HashtagsPage } from "./view";

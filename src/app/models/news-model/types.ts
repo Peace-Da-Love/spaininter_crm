@@ -14,9 +14,9 @@ interface NewsItem {
 	description: string;
 	content: string;
 	link: string;
-	categoryId: number;
-	categoryName: string;
-	categoryLink: string;
+	hashtagId: number;
+	hashtagName: string;
+	hashtagLink: string;
 	views: number;
 	adLink: string | null;
 	createdAt: string;
@@ -53,8 +53,8 @@ export type AdminNewsTranslation = {
 };
 
 export interface UpdateAdminNewsDto {
-	category_id?: number;
-	category_name?: string;
+	hashtag_id?: number;
+	hashtag_name?: string;
 	poster_link?: string;
 	province?: string;
 	city?: string;

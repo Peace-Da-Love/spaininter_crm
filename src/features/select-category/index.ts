@@ -1,1 +1,0 @@
-export { SelectCategory } from "./view";

@@ -21,7 +21,7 @@ import { MDXEditorMethods } from "@mdxeditor/editor";
 import { newsModel } from "@/app/models/news-model";
 import { useLanguagesStore } from "@/app/store";
 import { useToast } from "@/shared/hooks";
-import { CategoryAutocomplete } from "@/features/category-autocomplete";
+import { HashtagAutocomplete } from "@/features/hashtag-autocomplete";
 import { SelectCity } from "@/features/select-city";
 import { LanguageSelection } from "@/features/language-selection";
 import { ImageDropZone } from "@/features/image-drop-zone";
@@ -40,15 +40,15 @@ const reviewNewsFormSchema = z
 		province: z.string().optional().nullable(),
 		city: z.string().optional().nullable(),
 		ad_link: z.string().max(100, "Max 100 characters for ad link").optional().nullable(),
-		category_id: z.string().optional(),
-		category_name: z
-			.string()
-		.nonempty("Category is required")
+	hashtag_id: z.string().optional(),
+	hashtag_name: z
+		.string()
+		.nonempty("Hashtag is required")
 		.refine(
 			val => {
 				return /^\d+$/.test(val) || /^[a-z0-9_]{2,50}$/.test(val);
 			},
-			"Invalid category"
+			"Invalid hashtag"
 		),
 	poster_link: z.string().min(1, "Poster image is required"),
 		translations: z.array(
@@ -152,8 +152,8 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
 	const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
 	const [posterLink, setPosterLink] = useState<string>("");
-	const [originalCategoryId, setOriginalCategoryId] = useState<number | null>(null);
-	const [originalCategoryName, setOriginalCategoryName] = useState<string>("");
+	const [originalHashtagId, setOriginalHashtagId] = useState<number | null>(null);
+	const [originalHashtagName, setOriginalHashtagName] = useState<string>("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
@@ -171,8 +171,8 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 		resolver: zodResolver(reviewNewsFormSchema),
 		defaultValues: {
 			currentLangId: languages?.[0]?.language_id,
-			category_id: "",
-			category_name: "",
+			hashtag_id: "",
+			hashtag_name: "",
 			poster_link: "",
 			province: "",
 			city: "",
@@ -216,14 +216,14 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 			const firstNews = results[0]?.data?.data?.news;
 
 			setPosterLink(firstNews?.posterLink ?? "");
-			setOriginalCategoryId(firstNews?.categoryId ?? null);
-			setOriginalCategoryName(firstNews?.categoryName ?? "");
+			setOriginalHashtagId(firstNews?.hashtagId ?? null);
+			setOriginalHashtagName(firstNews?.hashtagName ?? "");
 
 			replace(translations);
 			reset({
 				currentLangId: languages[0]?.language_id,
-				category_id: firstNews?.categoryId ? String(firstNews.categoryId) : "",
-				category_name: firstNews?.categoryName ?? "",
+				hashtag_id: firstNews?.hashtagId ? String(firstNews.hashtagId) : "",
+				hashtag_name: firstNews?.hashtagName ?? "",
 				poster_link: firstNews?.posterLink ?? "",
 				province: firstNews?.province ?? "",
 				city: firstNews?.city ?? "",
@@ -249,22 +249,22 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 		}
 	}, [currentLangId, getValues, languages]);
 
-	const normalizeCategoryName = (value: string) => value.trim().toLowerCase();
+	const normalizeHashtagName = (value: string) => value.trim().toLowerCase();
 
-	const buildCategoryPayload = (value: string) => {
+	const buildHashtagPayload = (value: string) => {
 		const trimmed = value.trim();
 		if (!trimmed) {
-			return originalCategoryId ? { category_id: originalCategoryId } : {};
+			return originalHashtagId ? { hashtag_id: originalHashtagId } : {};
 		}
 		if (/^\d+$/.test(trimmed)) {
-			return { category_id: Number(trimmed) };
+			return { hashtag_id: Number(trimmed) };
 		}
-		const normalized = normalizeCategoryName(trimmed);
-		const originalNormalized = normalizeCategoryName(originalCategoryName);
-		if (originalNormalized && normalized === originalNormalized && originalCategoryId) {
-			return { category_id: originalCategoryId };
+		const normalized = normalizeHashtagName(trimmed);
+		const originalNormalized = normalizeHashtagName(originalHashtagName);
+		if (originalNormalized && normalized === originalNormalized && originalHashtagId) {
+			return { hashtag_id: originalHashtagId };
 		}
-		return { category_name: normalized };
+		return { hashtag_name: normalized };
 	};
 
 	const applyUpdate = async (data: FormValues, showToast = true) => {
@@ -313,7 +313,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 			}
 
 			const payload = {
-				...buildCategoryPayload(data.category_name),
+				...buildHashtagPayload(data.hashtag_name),
 				poster_link: posterUrl,
 				province: data.province ?? undefined,
 				city: data.city ?? undefined,
@@ -325,9 +325,9 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 
 			setPosterLink(posterUrl);
 			setSelectedPhotoFile(null);
-			setOriginalCategoryName(data.category_name);
-			if (payload.category_id) {
-				setOriginalCategoryId(payload.category_id);
+			setOriginalHashtagName(data.hashtag_name);
+			if (payload.hashtag_id) {
+				setOriginalHashtagId(payload.hashtag_id);
 			}
 
 			reset({
@@ -413,18 +413,18 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 					<Box mb='20px'>
 						<Controller
 							control={control}
-							name='category_name'
+							name='hashtag_name'
 							render={({ field }) => (
-								<CategoryAutocomplete
+								<HashtagAutocomplete
 									value={field.value}
 									onChange={value => {
 										field.onChange(value ?? "");
 										if (value && !/^\d+$/.test(value)) {
-											setValue("category_id", "");
+											setValue("hashtag_id", "");
 										}
 									}}
-									error={!!errors?.category_id}
-									helperText={errors?.category_id?.message}
+									error={!!errors?.hashtag_name}
+									helperText={errors?.hashtag_name?.message}
 								/>
 							)}
 						/>

@@ -1,6 +1,6 @@
 export interface INews {
-	category_id?: number;
-	category_name?: string;
+	hashtag_id?: number;
+	hashtag_name?: string;
 	poster_link: string;
 	province: string;
 	city: string;

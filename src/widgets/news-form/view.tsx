@@ -19,7 +19,7 @@ import {
 import { z } from "zod";
 import { schema } from "./model.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CategoryAutocomplete } from "@/features/category-autocomplete";
+import { HashtagAutocomplete } from "@/features/hashtag-autocomplete";
 import { SelectCity } from "@/features/select-city";
 import { LanguageSelection } from "@/features/language-selection";
 import { ImageDropZone } from "@/features/image-drop-zone";
@@ -62,8 +62,8 @@ export const NewsForm = () => {
 		resolver: zodResolver(schema),
 		defaultValues: {
 			currentLangId: languages?.[0].language_id,
-			category_id: "",
-			category_name: "",
+			hashtag_id: "",
+			hashtag_name: "",
 			poster_link: "",
 			translations: languages.map(lang => ({
 				language_id: lang.language_id,
@@ -105,10 +105,10 @@ export const NewsForm = () => {
 			} = await imageModel(formData);
 
 			const editedData: INews = {
-				// Если это цифра - это category_id, иначе - новое имя категории
-				...(data.category_name && /^\d+$/.test(data.category_name)
-					? { category_id: Number(data.category_name) }
-					: data.category_name && { category_name: data.category_name.toLowerCase() }),
+				// Если это цифра - это hashtag_id, иначе - новое имя хэштега
+				...(data.hashtag_name && /^\d+$/.test(data.hashtag_name)
+					? { hashtag_id: Number(data.hashtag_name) }
+					: data.hashtag_name && { hashtag_name: data.hashtag_name.toLowerCase() }),
 				poster_link: url,
 				province: data.province,
 				city: data.city,
@@ -133,19 +133,19 @@ export const NewsForm = () => {
 					<Box mb='20px'>
 						<Controller
 							control={control}
-							name='category_name'
-							render={({ field }) => (
-								<CategoryAutocomplete
-									value={field.value}
-									onChange={(value) => {
-										field.onChange(value);
-										// Очищаем category_id если пользователь ввёл новую категорию
+								name='hashtag_name'
+								render={({ field }) => (
+									<HashtagAutocomplete
+										value={field.value}
+										onChange={(value) => {
+											field.onChange(value);
+										// Очищаем hashtag_id если пользователь ввёл новый хэштег
 										if (value && !/^\d+$/.test(value)) {
-											setValue("category_id", "");
+											setValue("hashtag_id", "");
 										}
 									}}
-									error={!!errors?.category_id}
-									helperText={errors?.category_id?.message}
+									error={!!errors?.hashtag_name}
+									helperText={errors?.hashtag_name?.message}
 								/>
 							)}
 						/>
