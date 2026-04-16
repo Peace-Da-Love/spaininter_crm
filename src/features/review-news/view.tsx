@@ -3,6 +3,11 @@ import {
 	Box,
 	Button,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
 	TextField,
 	Typography
 } from "@mui/material";
@@ -156,6 +161,8 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	const [originalHashtagName, setOriginalHashtagName] = useState<string>("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+	const [isApproveConfirmOpen, setIsApproveConfirmOpen] = useState(false);
+	const [missingLocales, setMissingLocales] = useState<string[]>([]);
 
 	const {
 		handleSubmit,
@@ -364,20 +371,62 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 
 	const hasChanges = isDirty || selectedPhotoFile !== null;
 
+	const getMissingLocales = (data: FormValues) => {
+		const emptyLanguageIds = data.translations
+			.filter(translation => {
+				const title = (translation.title ?? "").trim();
+				const description = (translation.description ?? "").trim();
+				const content = (translation.content ?? "").trim();
+				return !title && !description && !content;
+			})
+			.map(translation => translation.language_id);
+
+		return emptyLanguageIds
+			.map(languageId => {
+				const language = languages.find(lang => lang.language_id === languageId);
+				return language?.language_code ?? String(languageId);
+			})
+			.filter(Boolean);
+	};
+
+	const performApprove = async (data: FormValues) => {
+		if (hasChanges) {
+			await applyUpdate(data, false);
+		}
+		await updateStatus("approved");
+	};
+
 	const handleApprove = async () => {
 		const isValid = await trigger();
 		if (!isValid) {
 			toast.error("Please fix validation errors before approving");
 			return;
 		}
-		if (hasChanges) {
-			await applyUpdate(getValues() as FormValues, false);
+
+		const data = getValues() as FormValues;
+		const missing = getMissingLocales(data);
+		if (missing.length > 0) {
+			setMissingLocales(missing);
+			setIsApproveConfirmOpen(true);
+			return;
 		}
-		await updateStatus("approved");
+
+		await performApprove(data);
 	};
 
 	const handleReject = async () => {
 		await updateStatus("deleted");
+	};
+
+	const handleApproveConfirm = async () => {
+		setIsApproveConfirmOpen(false);
+		setMissingLocales([]);
+		await performApprove(getValues() as FormValues);
+	};
+
+	const handleApproveCancel = () => {
+		setIsApproveConfirmOpen(false);
+		setMissingLocales([]);
 	};
 
 	const currentLangIndex = useMemo(
@@ -402,6 +451,8 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 		});
 		return map;
 	}, [translations]);
+
+	const missingLocalesText = missingLocales.join(", ");
 
 	if (isLoading) return <CircularProgress />;
 	if (isError) return <div>Error...</div>;
@@ -634,6 +685,26 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 					</Button>
 				</Box>
 			</form>
+			<Dialog open={isApproveConfirmOpen} onClose={handleApproveCancel}>
+				<DialogTitle>Подтвердите публикацию</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						Вы уверены что хотите опубликовать новость без следующих переводов: {missingLocalesText}?
+						В этом случае новость не будет отображаться в каталоге новостей по соответствующим локалям.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleApproveCancel}>Отмена</Button>
+					<Button
+						variant='contained'
+						color='success'
+						onClick={handleApproveConfirm}
+						disabled={isSaving || isUpdatingStatus}
+					>
+						Опубликовать
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	);
 };
