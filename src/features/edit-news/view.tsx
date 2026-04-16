@@ -203,11 +203,20 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 	
 	const [isUpdating, setIsUpdating] = useState(false);
 
+	const isTranslationEmpty = (data?: FormData | null) => {
+		const title = (data?.title ?? "").trim();
+		const description = (data?.description ?? "").trim();
+		const content = (data?.content ?? "").trim();
+		return !title && !description && !content;
+	};
+
 	// Function to create translation updates
-	const createUpdates = (): UpdateTranslationDto[] => {
+	const createUpdates = (skipLanguageIds: Set<number>): UpdateTranslationDto[] => {
 		const updates: UpdateTranslationDto[] = [];
 		
 		changedLanguages.forEach(languageId => {
+			if (skipLanguageIds.has(languageId)) return;
+
 			const currentData = allLanguagesData[languageId];
 			const originalLangData = originalData[languageId];
 			
@@ -265,6 +274,12 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			return;
 		}
 
+		const languagesToDelete = new Set<number>(
+			Array.from(changedLanguages).filter(languageId =>
+				isTranslationEmpty(allLanguagesData[languageId])
+			)
+		);
+
 		setIsUpdating(true);
 
 		try {
@@ -277,10 +292,16 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 
 			// 2. Then update translations (if there are changes)
 			if (hasLanguageChanges) {
-				const updates = createUpdates();
-				if (updates.length > 0) {
-					await newsModel.updateTranslations(newsId, updates);
-				}
+				const updates = createUpdates(languagesToDelete);
+				const deletePromises = Array.from(languagesToDelete).map(languageId =>
+					newsModel.deleteTranslation(newsId, languageId)
+				);
+				const updatePromise =
+					updates.length > 0
+						? newsModel.updateTranslations(newsId, updates)
+						: Promise.resolve();
+
+				await Promise.all([...deletePromises, updatePromise]);
 			}
 
 			toast.success("News updated successfully");

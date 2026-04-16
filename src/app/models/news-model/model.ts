@@ -60,6 +60,13 @@ class Model {
 		});
 	}
 
+	public async deleteTranslation(
+		newsId: number,
+		languageId: number
+	): Promise<AxiosResponse<IResponse>> {
+		return $api.delete(`/news/${newsId}/translations/${languageId}`);
+	}
+
 	// Admin-only update for pending news
 	public async updateByAdmin(
 		newsId: number,
