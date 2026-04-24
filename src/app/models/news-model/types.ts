@@ -63,5 +63,5 @@ export interface UpdateAdminNewsDto {
 }
 
 export interface UpdateNewsStatusDto {
-	status: "pending" | "approved" | "deleted";
+	status: "pending" | "approved" | "rejected";
 }

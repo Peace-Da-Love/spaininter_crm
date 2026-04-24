@@ -356,7 +356,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 		await applyUpdate(data);
 	};
 
-	const updateStatus = async (status: "approved" | "deleted") => {
+	const updateStatus = async (status: "approved" | "rejected") => {
 		setIsUpdatingStatus(true);
 		try {
 			await newsModel.updateStatus(newsId, { status });
@@ -415,7 +415,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	};
 
 	const handleReject = async () => {
-		await updateStatus("deleted");
+		await updateStatus("rejected");
 	};
 
 	const handleApproveConfirm = async () => {
@@ -668,7 +668,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 						{isUpdatingStatus ? (
 							<CircularProgress size={24} color='inherit' />
 						) : (
-							"Approve"
+							"Post"
 						)}
 					</Button>
 					<Button
