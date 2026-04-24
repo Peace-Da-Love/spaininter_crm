@@ -17,6 +17,7 @@ interface NewsItem {
 	hashtagId: number;
 	hashtagName: string;
 	hashtagLink: string;
+	hashtags?: NewsHashtag[];
 	views: number;
 	adLink: string | null;
 	createdAt: string;
@@ -55,12 +56,19 @@ export type AdminNewsTranslation = {
 export interface UpdateAdminNewsDto {
 	hashtag_id?: number;
 	hashtag_name?: string;
+	hashtag_names?: string[];
 	poster_link?: string;
 	province?: string;
 	city?: string;
 	ad_link?: string | null;
 	translations: AdminNewsTranslation[];
 }
+
+export type NewsHashtag = {
+	hashtagId: number;
+	hashtagName: string;
+	hashtagLink: string;
+};
 
 export interface UpdateNewsStatusDto {
 	status: "pending" | "approved" | "rejected";

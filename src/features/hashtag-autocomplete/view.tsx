@@ -1,10 +1,11 @@
-import { forwardRef, useMemo, useState, SyntheticEvent } from "react";
+import { forwardRef, SyntheticEvent, useMemo, useState } from "react";
 import {
 	Autocomplete,
 	AutocompleteRenderInputParams,
+	Box,
+	Chip,
 	CircularProgress,
 	TextField,
-	Box,
 	Typography
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -13,23 +14,17 @@ import { hashtagsModel } from "@/app/models/hashtags-model";
 type Props = {
 	error?: boolean;
 	helperText?: string;
-	value?: string;
-	onChange?: (value: string | null) => void;
+	value?: string[];
+	onChange?: (value: string[]) => void;
 	label?: string;
 };
 
+const HASHTAG_REGEX = /^[a-z0-9_]{2,50}$/;
+const normalizeHashtag = (value: string) => value.trim().toLowerCase();
+
 export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
-	(
-		{
-			error,
-			helperText,
-			value,
-			onChange,
-			label = "Hashtag"
-		},
-		ref
-	) => {
-		const [inputValue, setInputValue] = useState<string>(value || "");
+	({ error, helperText, value = [], onChange, label = "Hashtags" }, ref) => {
+		const [inputValue, setInputValue] = useState("");
 
 		const { data, isLoading, isError } = useQuery({
 			queryKey: ["get-hashtags-autocomplete"],
@@ -38,28 +33,28 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 
 		const hashtags = data?.data.data.hashtags || [];
 
-		// Фильтруем категории по введенному тексту
 		const filteredOptions = useMemo(() => {
-			if (!inputValue) return hashtags.map(tag => tag.hashtag_name);
+			const selected = new Set(value.map(normalizeHashtag));
+			const lowerInput = normalizeHashtag(inputValue);
 
-			const lowerInput = inputValue.toLowerCase();
 			const filtered = hashtags
-				.filter(tag =>
-					tag.hashtag_name.toLowerCase().startsWith(lowerInput)
-				)
-				.map(tag => tag.hashtag_name);
+				.map(tag => tag.hashtag_name)
+				.filter(name => !selected.has(normalizeHashtag(name)))
+				.filter(
+					name => !lowerInput || name.toLowerCase().startsWith(lowerInput)
+				);
 
-			// Если введённый текст не совпадает ни с одной категорией и валиден,
-			// добавляем его как опцию для создания новой категории
 			if (
-				filtered.length === 0 &&
-				/^[a-z0-9_]{2,50}$/.test(inputValue)
+				lowerInput &&
+				HASHTAG_REGEX.test(lowerInput) &&
+				!selected.has(lowerInput) &&
+				!hashtags.some(tag => normalizeHashtag(tag.hashtag_name) === lowerInput)
 			) {
-				return [inputValue];
+				return [lowerInput, ...filtered];
 			}
 
 			return filtered;
-		}, [inputValue, hashtags]);
+		}, [hashtags, inputValue, value]);
 
 		if (isError) {
 			return (
@@ -72,33 +67,43 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 		return (
 			<Box ref={ref} sx={{ mb: 2 }}>
 				<Autocomplete
+					multiple
 					freeSolo
 					options={filteredOptions}
-					value={value || null}
+					value={value}
 					inputValue={inputValue}
 					onInputChange={(_event: SyntheticEvent, newInputValue: string) => {
-						// Только обновляем inputValue, не меняем value до выбора
 						setInputValue(newInputValue);
 					}}
-					onChange={(_event: SyntheticEvent, newValue: string | null) => {
-						// Когда пользователь выбирает из списка или подтверждает ввод
-						if (newValue) {
-							setInputValue(newValue);
-							onChange?.(newValue);
-						}
+					onChange={(_event: SyntheticEvent, newValue: string[]) => {
+						const normalized = Array.from(
+							new Set(newValue.map(normalizeHashtag).filter(Boolean))
+						);
+						onChange?.(normalized);
+						setInputValue("");
 					}}
 					loading={isLoading}
 					disabled={isLoading}
+					renderTags={(tagValue, getTagProps) =>
+						tagValue.map((option, index) => (
+							<Chip
+								label={option}
+								{...getTagProps({ index })}
+								key={option}
+								size='small'
+							/>
+						))
+					}
 					renderInput={(params: AutocompleteRenderInputParams) => (
 						<TextField
 							{...params}
 							label={label}
-							placeholder='tech_news'
+							placeholder={value.length ? "Add another hashtag" : "tech_news"}
 							error={error}
 							helperText={
 								error
 									? helperText
-									: "Type hashtag name or select from list"
+									: "Type hashtag names or select several from the list"
 							}
 							InputProps={{
 								...params.InputProps,
@@ -114,15 +119,15 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 						/>
 					)}
 					noOptionsText={
-						inputValue && /^[a-z0-9_]{2,50}$/.test(inputValue)
+						inputValue && HASHTAG_REGEX.test(normalizeHashtag(inputValue))
 							? "Create new hashtag"
 							: "No hashtags found"
 					}
 				/>
-				{inputValue && !/^[a-z0-9_]{2,50}$/.test(inputValue) && (
+				{inputValue && !HASHTAG_REGEX.test(normalizeHashtag(inputValue)) && (
 					<Typography
 						variant='caption'
-						sx={{ color: '#d32f2f', display: 'block', mt: 0.5 }}
+						sx={{ color: "#d32f2f", display: "block", mt: 0.5 }}
 					>
 						Only lowercase letters, numbers, and underscores (2-50 chars)
 					</Typography>

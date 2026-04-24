@@ -1,6 +1,7 @@
 export interface INews {
 	hashtag_id?: number;
 	hashtag_name?: string;
+	hashtag_names?: string[];
 	poster_link: string;
 	province: string;
 	city: string;

@@ -33,7 +33,6 @@ import { imageModel, IImageDto } from "@/app/models/image-model";
 export const NewsForm = () => {
 	const navigate = useNavigate();
 	const { languages } = useLanguagesStore();
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [_, setCurrentLang] = useState<string>("en");
 	const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
 	const toast = useToast();
@@ -62,8 +61,7 @@ export const NewsForm = () => {
 		resolver: zodResolver(schema),
 		defaultValues: {
 			currentLangId: languages?.[0].language_id,
-			hashtag_id: "",
-			hashtag_name: "",
+			hashtag_names: [],
 			poster_link: "",
 			translations: languages.map(lang => ({
 				language_id: lang.language_id,
@@ -87,7 +85,6 @@ export const NewsForm = () => {
 			return;
 		}
 
-		// Validate that photo is selected
 		if (!selectedPhotoFile) {
 			setError("poster_link", {
 				type: "manual",
@@ -97,7 +94,6 @@ export const NewsForm = () => {
 		}
 
 		try {
-			// Upload photo first
 			const formData = new FormData() as IImageDto;
 			formData.append("file", selectedPhotoFile);
 			const {
@@ -105,10 +101,7 @@ export const NewsForm = () => {
 			} = await imageModel(formData);
 
 			const editedData: INews = {
-				// Если это цифра - это hashtag_id, иначе - новое имя хэштега
-				...(data.hashtag_name && /^\d+$/.test(data.hashtag_name)
-					? { hashtag_id: Number(data.hashtag_name) }
-					: data.hashtag_name && { hashtag_name: data.hashtag_name.toLowerCase() }),
+				hashtag_names: data.hashtag_names,
 				poster_link: url,
 				province: data.province,
 				city: data.city,
@@ -121,10 +114,10 @@ export const NewsForm = () => {
 			toast.error("Failed to upload image");
 		}
 	};
-	
+
 	if (!languages || languages.length === 0) {
-		return <CircularProgress />; 
-	  }
+		return <CircularProgress />;
+	}
 
 	return (
 		<Box>
@@ -133,19 +126,13 @@ export const NewsForm = () => {
 					<Box mb='20px'>
 						<Controller
 							control={control}
-								name='hashtag_name'
-								render={({ field }) => (
-									<HashtagAutocomplete
-										value={field.value}
-										onChange={(value) => {
-											field.onChange(value);
-										// Очищаем hashtag_id если пользователь ввёл новый хэштег
-										if (value && !/^\d+$/.test(value)) {
-											setValue("hashtag_id", "");
-										}
-									}}
-									error={!!errors?.hashtag_name}
-									helperText={errors?.hashtag_name?.message}
+							name='hashtag_names'
+							render={({ field }) => (
+								<HashtagAutocomplete
+									value={field.value}
+									onChange={field.onChange}
+									error={!!errors?.hashtag_names}
+									helperText={errors?.hashtag_names?.message}
 								/>
 							)}
 						/>
@@ -188,7 +175,7 @@ export const NewsForm = () => {
 						/>
 					</Box>
 					<ImageDropZone
-						onFileSelect={(file) => {
+						onFileSelect={file => {
 							setSelectedPhotoFile(file);
 							if (file) {
 								setValue("poster_link", file.name);
@@ -201,20 +188,18 @@ export const NewsForm = () => {
 						message={errors?.poster_link?.message}
 					/>
 					<Controller
-						render={({ field: { value, onChange } }) => {
-							return (
-								<LanguageSelection
-									value={value}
-									onChange={value => {
-										setCurrentLang(
-											languages.find(lang => lang.language_id === value)
-												?.language_code as string
-										);
-										onChange(value);
-									}}
-								/>
-							);
-						}}
+						render={({ field: { value, onChange } }) => (
+							<LanguageSelection
+								value={value}
+								onChange={value => {
+									setCurrentLang(
+										languages.find(lang => lang.language_id === value)
+											?.language_code as string
+									);
+									onChange(value);
+								}}
+							/>
+						)}
 						name={`currentLangId`}
 						control={control}
 					/>
@@ -225,74 +210,72 @@ export const NewsForm = () => {
 						lang => lang.language_id === getValues().currentLangId
 					);
 
-					if (index === langIndex) {
-						return (
-							<Box key={field.id} mb='20px'>
-								<Box mb='20px' maxWidth={600}>
-									<Controller
-										control={control}
-										name={`translations.${index}.title`}
-										defaultValue={""}
-										key={`translations.${index}.title`}
-										render={({ field }) => (
-											<TextField
-												{...field}
-												placeholder='Title'
-												error={!!errors.translations?.[index]?.title}
-												helperText={
-													errors.translations?.[index]?.title?.message
-												}
-												fullWidth
-											/>
-										)}
-									/>
-								</Box>
-								<Box mb='20px' maxWidth={600}>
-									<Controller
-										control={control}
-										defaultValue={""}
-										name={`translations.${index}.description`}
-										key={`translations.${index}.description`}
-										render={({ field }) => (
-											<TextField
-												{...field}
-												minRows={3}
-												multiline
-												placeholder='Description'
-												error={!!errors.translations?.[index]?.description}
-												helperText={
-													errors.translations?.[index]?.description?.message
-												}
-												fullWidth
-											/>
-										)}
-									/>
-								</Box>
-								<Box maxWidth={900}>
-									<Controller
-										control={control}
-										name={`translations.${index}.content`}
-										key={`translations.${index}.content`}
-										defaultValue={""}
-										render={({ field: { onChange, value } }) => (
-											<MarkdownEditor
-												ref={mdxEditorRef}
-												onChange={value => {
-													onChange(mdxEditorRef.current?.getMarkdown() ?? "");
-													mdxEditorRef.current?.setMarkdown(value);
-												}}
-												value={value}
-												error={!!errors.translations?.[index]?.content}
-												helperText={
-													errors.translations?.[index]?.content?.message
-												}
-											/>
-										)}
-									/>
-								</Box>
+					if (index !== langIndex) return null;
+
+					return (
+						<Box key={field.id} mb='20px'>
+							<Box mb='20px' maxWidth={600}>
+								<Controller
+									control={control}
+									name={`translations.${index}.title`}
+									defaultValue={""}
+									key={`translations.${index}.title`}
+									render={({ field }) => (
+										<TextField
+											{...field}
+											placeholder='Title'
+											error={!!errors.translations?.[index]?.title}
+											helperText={errors.translations?.[index]?.title?.message}
+											fullWidth
+										/>
+									)}
+								/>
 							</Box>
-						);
-					}
+							<Box mb='20px' maxWidth={600}>
+								<Controller
+									control={control}
+									defaultValue={""}
+									name={`translations.${index}.description`}
+									key={`translations.${index}.description`}
+									render={({ field }) => (
+										<TextField
+											{...field}
+											minRows={3}
+											multiline
+											placeholder='Description'
+											error={!!errors.translations?.[index]?.description}
+											helperText={
+												errors.translations?.[index]?.description?.message
+											}
+											fullWidth
+										/>
+									)}
+								/>
+							</Box>
+							<Box maxWidth={900}>
+								<Controller
+									control={control}
+									name={`translations.${index}.content`}
+									key={`translations.${index}.content`}
+									defaultValue={""}
+									render={({ field: { onChange, value } }) => (
+										<MarkdownEditor
+											ref={mdxEditorRef}
+											onChange={value => {
+												onChange(mdxEditorRef.current?.getMarkdown() ?? "");
+												mdxEditorRef.current?.setMarkdown(value);
+											}}
+											value={value}
+											error={!!errors.translations?.[index]?.content}
+											helperText={
+												errors.translations?.[index]?.content?.message
+											}
+										/>
+									)}
+								/>
+							</Box>
+						</Box>
+					);
 				})}
 
 				{!!errors.translations && (
@@ -305,7 +288,7 @@ export const NewsForm = () => {
 						{errors.translations?.message}
 					</Typography>
 				)}
-				
+
 				<Button type='submit' disabled={isPending} variant='contained'>
 					{isPending ? (
 						<CircularProgress size={24} color='inherit' />

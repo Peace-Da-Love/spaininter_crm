@@ -44,22 +44,28 @@ const reviewNewsFormSchema = z
 		currentLangId: z.number(),
 		province: z.string().optional().nullable(),
 		city: z.string().optional().nullable(),
-		ad_link: z.string().max(100, "Max 100 characters for ad link").optional().nullable(),
-	hashtag_id: z.string().optional(),
-	hashtag_name: z
-		.string()
-		.nonempty("Hashtag is required")
-		.refine(
-			val => {
-				return /^\d+$/.test(val) || /^[a-z0-9_]{2,50}$/.test(val);
-			},
-			"Invalid hashtag"
-		),
-	poster_link: z.string().min(1, "Poster image is required"),
+		ad_link: z
+			.string()
+			.max(100, "Max 100 characters for ad link")
+			.optional()
+			.nullable(),
+		hashtag_names: z
+			.array(
+				z
+					.string()
+					.transform(val => val.trim().toLowerCase())
+					.refine(val => /^[a-z0-9_]{2,50}$/.test(val), "Invalid hashtag")
+			)
+			.min(1, "At least one hashtag is required"),
+		poster_link: z.string().min(1, "Poster image is required"),
 		translations: z.array(
 			z.object({
 				language_id: z.number(),
-				title: z.string().max(100, "Max 100 characters for title").optional().nullable(),
+				title: z
+					.string()
+					.max(100, "Max 100 characters for title")
+					.optional()
+					.nullable(),
 				description: z
 					.string()
 					.max(255, "Max 255 characters for description")
@@ -157,8 +163,6 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
 	const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
 	const [posterLink, setPosterLink] = useState<string>("");
-	const [originalHashtagId, setOriginalHashtagId] = useState<number | null>(null);
-	const [originalHashtagName, setOriginalHashtagName] = useState<string>("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 	const [isApproveConfirmOpen, setIsApproveConfirmOpen] = useState(false);
@@ -178,8 +182,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 		resolver: zodResolver(reviewNewsFormSchema),
 		defaultValues: {
 			currentLangId: languages?.[0]?.language_id,
-			hashtag_id: "",
-			hashtag_name: "",
+			hashtag_names: [],
 			poster_link: "",
 			province: "",
 			city: "",
@@ -197,7 +200,11 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	const translations = useWatch({ control, name: "translations" });
 
 	const { isLoading, isError } = useQuery({
-		queryKey: ["review-news", newsId, { languages: languages.map(l => l.language_code) }],
+		queryKey: [
+			"review-news",
+			newsId,
+			{ languages: languages.map(l => l.language_code) }
+		],
 		queryFn: async () => {
 			const results = await Promise.all(
 				languages.map(lang =>
@@ -223,14 +230,14 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 			const firstNews = results[0]?.data?.data?.news;
 
 			setPosterLink(firstNews?.posterLink ?? "");
-			setOriginalHashtagId(firstNews?.hashtagId ?? null);
-			setOriginalHashtagName(firstNews?.hashtagName ?? "");
+			const hashtagNames =
+				firstNews?.hashtags?.map(hashtag => hashtag.hashtagName) ??
+				(firstNews?.hashtagName ? [firstNews.hashtagName] : []);
 
 			replace(translations);
 			reset({
 				currentLangId: languages[0]?.language_id,
-				hashtag_id: firstNews?.hashtagId ? String(firstNews.hashtagId) : "",
-				hashtag_name: firstNews?.hashtagName ?? "",
+				hashtag_names: hashtagNames,
 				poster_link: firstNews?.posterLink ?? "",
 				province: firstNews?.province ?? "",
 				city: firstNews?.city ?? "",
@@ -248,31 +255,15 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	});
 
 	useEffect(() => {
-		const langIndex = languages.findIndex(lang => lang.language_id === currentLangId);
+		const langIndex = languages.findIndex(
+			lang => lang.language_id === currentLangId
+		);
 		const current =
 			langIndex >= 0 ? getValues(`translations.${langIndex}.content`) : "";
 		if (mdxEditorRef.current) {
 			mdxEditorRef.current.setMarkdown(current ?? "");
 		}
 	}, [currentLangId, getValues, languages]);
-
-	const normalizeHashtagName = (value: string) => value.trim().toLowerCase();
-
-	const buildHashtagPayload = (value: string) => {
-		const trimmed = value.trim();
-		if (!trimmed) {
-			return originalHashtagId ? { hashtag_id: originalHashtagId } : {};
-		}
-		if (/^\d+$/.test(trimmed)) {
-			return { hashtag_id: Number(trimmed) };
-		}
-		const normalized = normalizeHashtagName(trimmed);
-		const originalNormalized = normalizeHashtagName(originalHashtagName);
-		if (originalNormalized && normalized === originalNormalized && originalHashtagId) {
-			return { hashtag_id: originalHashtagId };
-		}
-		return { hashtag_name: normalized };
-	};
 
 	const applyUpdate = async (data: FormValues, showToast = true) => {
 		setIsSaving(true);
@@ -282,15 +273,16 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 				description?: string | null;
 				content?: string | null;
 			}) => {
-				const title = typeof translation.title === "string"
-					? translation.title.trim()
-					: "";
-				const description = typeof translation.description === "string"
-					? translation.description.trim()
-					: "";
-				const content = typeof translation.content === "string"
-					? translation.content.trim()
-					: "";
+				const title =
+					typeof translation.title === "string" ? translation.title.trim() : "";
+				const description =
+					typeof translation.description === "string"
+						? translation.description.trim()
+						: "";
+				const content =
+					typeof translation.content === "string"
+						? translation.content.trim()
+						: "";
 				return title && description && content;
 			};
 
@@ -320,7 +312,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 			}
 
 			const payload = {
-				...buildHashtagPayload(data.hashtag_name),
+				hashtag_names: data.hashtag_names,
 				poster_link: posterUrl,
 				province: data.province ?? undefined,
 				city: data.city ?? undefined,
@@ -332,11 +324,6 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 
 			setPosterLink(posterUrl);
 			setSelectedPhotoFile(null);
-			setOriginalHashtagName(data.hashtag_name);
-			if (payload.hashtag_id) {
-				setOriginalHashtagId(payload.hashtag_id);
-			}
-
 			reset({
 				...data,
 				poster_link: posterUrl
@@ -383,7 +370,9 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 
 		return emptyLanguageIds
 			.map(languageId => {
-				const language = languages.find(lang => lang.language_id === languageId);
+				const language = languages.find(
+					lang => lang.language_id === languageId
+				);
 				return language?.language_code ?? String(languageId);
 			})
 			.filter(Boolean);
@@ -464,18 +453,13 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 					<Box mb='20px'>
 						<Controller
 							control={control}
-							name='hashtag_name'
+							name='hashtag_names'
 							render={({ field }) => (
 								<HashtagAutocomplete
 									value={field.value}
-									onChange={value => {
-										field.onChange(value ?? "");
-										if (value && !/^\d+$/.test(value)) {
-											setValue("hashtag_id", "");
-										}
-									}}
-									error={!!errors?.hashtag_name}
-									helperText={errors?.hashtag_name?.message}
+									onChange={field.onChange}
+									error={!!errors?.hashtag_names}
+									helperText={errors?.hashtag_names?.message}
 								/>
 							)}
 						/>
@@ -588,7 +572,9 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 												{...field}
 												placeholder='Title'
 												error={!!errors.translations?.[index]?.title}
-												helperText={errors.translations?.[index]?.title?.message}
+												helperText={
+													errors.translations?.[index]?.title?.message
+												}
 												fullWidth
 											/>
 										)}
@@ -652,7 +638,11 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 				)}
 
 				<Box display='flex' gap={pxToRem(12)}>
-					<Button type='submit' disabled={isSaving || isUpdatingStatus} variant='contained'>
+					<Button
+						type='submit'
+						disabled={isSaving || isUpdatingStatus}
+						variant='contained'
+					>
 						{isSaving ? (
 							<CircularProgress size={24} color='inherit' />
 						) : (
@@ -689,8 +679,9 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 				<DialogTitle>Подтвердите публикацию</DialogTitle>
 				<DialogContent>
 					<DialogContentText>
-						Вы уверены что хотите опубликовать новость без следующих переводов: {missingLocalesText}?
-						В этом случае новость не будет отображаться в каталоге новостей по соответствующим локалям.
+						Вы уверены что хотите опубликовать новость без следующих переводов:{" "}
+						{missingLocalesText}? В этом случае новость не будет отображаться в
+						каталоге новостей по соответствующим локалям.
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>

@@ -11,13 +11,15 @@ import { useMutation } from "@tanstack/react-query";
 import { CreateHashtagDto } from "@/app/models/hashtags-model/types.ts";
 import { useToast } from "@/shared/hooks";
 import { useNavigate } from "react-router-dom";
+import { isAxiosError } from "axios";
 
 export const HashtagForm = () => {
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
-		reset
+		reset,
+		setError
 	} = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 		defaultValues: {
@@ -34,7 +36,19 @@ export const HashtagForm = () => {
 			reset();
 			navigate("/hashtags");
 		},
-		onError: () => {
+		onError: error => {
+			if (isAxiosError<{ message?: string }>(error) && error.response?.status === 409) {
+				const message =
+					error.response.data?.message || "A hashtag with this name already exists";
+
+				setError("hashtag_name", {
+					type: "manual",
+					message
+				});
+				toast.warning(message);
+				return;
+			}
+
 			toast.error("Failed to create hashtag");
 		}
 	});
