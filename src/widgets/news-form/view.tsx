@@ -2,6 +2,13 @@ import {
 	Box,
 	Button,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	FormControlLabel,
+	Radio,
+	RadioGroup,
 	TextField,
 	Typography
 } from "@mui/material";
@@ -14,7 +21,8 @@ import {
 	Controller,
 	SubmitHandler,
 	useFieldArray,
-	useForm
+	useForm,
+	useWatch
 } from "react-hook-form";
 import { z } from "zod";
 import { schema } from "./model.ts";
@@ -23,18 +31,25 @@ import { HashtagAutocomplete } from "@/features/hashtag-autocomplete";
 import { SelectCity } from "@/features/select-city";
 import { LanguageSelection } from "@/features/language-selection";
 import { ImageDropZone } from "@/features/image-drop-zone";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 import { MarkdownEditor } from "@/features/markdown-editor";
 import { useLanguagesStore } from "@/app/store";
 import { TelegramLink } from "@/features/edit-news/ui/telegram-link";
 import { imageModel, IImageDto } from "@/app/models/image-model";
 
+type FormValues = z.infer<typeof schema>;
+
 export const NewsForm = () => {
 	const navigate = useNavigate();
 	const { languages } = useLanguagesStore();
 	const [_, setCurrentLang] = useState<string>("en");
 	const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+	const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
+	const [isTranslating, setIsTranslating] = useState(false);
+	const [selectedSourceLangId, setSelectedSourceLangId] = useState<
+		number | null
+	>(null);
 	const toast = useToast();
 	const { mutate, isPending } = useMutation({
 		mutationKey: ["create-news"],
@@ -56,8 +71,9 @@ export const NewsForm = () => {
 		clearErrors,
 		control,
 		getValues,
-		setValue
-	} = useForm<z.infer<typeof schema>>({
+		setValue,
+		trigger
+	} = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			currentLangId: languages?.[0].language_id,
@@ -75,8 +91,222 @@ export const NewsForm = () => {
 		name: "translations",
 		control
 	});
+	const translations = useWatch({ control, name: "translations" });
+	const currentLangId = useWatch({ control, name: "currentLangId" });
 
-	const onSubmit: SubmitHandler<z.infer<typeof schema>> = async data => {
+	const languageStatuses = useMemo(() => {
+		const map: Record<number, "complete" | "partial" | "empty"> = {};
+		(translations ?? []).forEach(translation => {
+			const title = (translation.title ?? "").trim();
+			const description = (translation.description ?? "").trim();
+			const content = (translation.content ?? "").trim();
+			const filledCount = [title, description, content].filter(Boolean).length;
+			if (filledCount === 0) {
+				map[translation.language_id] = "empty";
+			} else if (filledCount === 3) {
+				map[translation.language_id] = "complete";
+			} else {
+				map[translation.language_id] = "partial";
+			}
+		});
+		return map;
+	}, [translations]);
+
+	const currentLangIndex = useMemo(
+		() => languages.findIndex(lang => lang.language_id === currentLangId),
+		[currentLangId, languages]
+	);
+
+	const completeSourceLanguages = useMemo(() => {
+		return languages.filter(language => {
+			const translation = translations?.find(
+				translation => translation.language_id === language.language_id
+			);
+			const title = (translation?.title ?? "").trim();
+			const description = (translation?.description ?? "").trim();
+			const content = (translation?.content ?? "").trim();
+			return title && description && content;
+		});
+	}, [languages, translations]);
+
+	const getMissingTranslationFields = (translation: {
+		title?: string | null;
+		description?: string | null;
+		content?: string | null;
+	}) => {
+		const fields: Array<"title" | "description" | "content"> = [];
+		if (!(translation.title ?? "").trim()) fields.push("title");
+		if (!(translation.description ?? "").trim()) fields.push("description");
+		if (!(translation.content ?? "").trim()) fields.push("content");
+		return fields;
+	};
+
+	const getTranslationTargets = (data: FormValues, sourceLangId?: number) => {
+		return data.translations
+			.map(translation => {
+				const language = languages.find(
+					language => language.language_id === translation.language_id
+				);
+				return {
+					language_id: translation.language_id,
+					language_code: language?.language_code ?? "",
+					fields: getMissingTranslationFields(translation)
+				};
+			})
+			.filter(
+				target =>
+					target.language_id !== sourceLangId &&
+					target.language_code &&
+					target.fields.length > 0
+			);
+	};
+
+	const hasMissingTranslations = useMemo(() => {
+		return (translations ?? []).some(
+			translation => getMissingTranslationFields(translation).length > 0
+		);
+	}, [translations]);
+
+	const syncCurrentEditorContent = () => {
+		if (currentLangIndex < 0) return;
+		const markdown = mdxEditorRef.current?.getMarkdown();
+		const currentValue = getValues(`translations.${currentLangIndex}.content`);
+		if (typeof markdown === "string" && markdown !== (currentValue ?? "")) {
+			setValue(`translations.${currentLangIndex}.content`, markdown, {
+				shouldDirty: true
+			});
+		}
+	};
+
+	const handleOpenTranslateDialog = () => {
+		syncCurrentEditorContent();
+		const data = getValues();
+		const sources = languages.filter(language => {
+			const translation = data.translations.find(
+				translation => translation.language_id === language.language_id
+			);
+			if (!translation) return false;
+			return getMissingTranslationFields(translation).length === 0;
+		});
+
+		if (sources.length === 0) {
+			toast.error("Add at least one complete translation first");
+			return;
+		}
+
+		const targets = getTranslationTargets(data);
+		if (targets.length === 0) {
+			toast.success("There are no empty translation fields");
+			return;
+		}
+
+		const currentIsComplete = sources.some(
+			source => source.language_id === currentLangId
+		);
+		setSelectedSourceLangId(
+			currentIsComplete ? currentLangId : sources[0].language_id
+		);
+		setIsTranslateDialogOpen(true);
+	};
+
+	const handleTranslateDialogClose = () => {
+		if (isTranslating) return;
+		setIsTranslateDialogOpen(false);
+	};
+
+	const handleTranslateMissing = async () => {
+		if (!selectedSourceLangId) return;
+
+		syncCurrentEditorContent();
+		const data = getValues();
+		const sourceLanguage = languages.find(
+			language => language.language_id === selectedSourceLangId
+		);
+		const sourceTranslation = data.translations.find(
+			translation => translation.language_id === selectedSourceLangId
+		);
+
+		if (!sourceLanguage || !sourceTranslation) {
+			toast.error("Selected source language was not found");
+			return;
+		}
+
+		if (getMissingTranslationFields(sourceTranslation).length > 0) {
+			toast.error("Selected source language must be complete");
+			return;
+		}
+
+		const targets = getTranslationTargets(data, selectedSourceLangId);
+		if (targets.length === 0) {
+			toast.success("There are no empty translation fields");
+			setIsTranslateDialogOpen(false);
+			return;
+		}
+
+		const fieldsByLanguageId = new Map(
+			targets.map(target => [target.language_id, target.fields])
+		);
+
+		setIsTranslating(true);
+		try {
+			const response = await newsModel.translateMissingDraftByAdmin({
+				source: {
+					language_id: sourceLanguage.language_id,
+					language_code: sourceLanguage.language_code,
+					title: sourceTranslation.title.trim(),
+					description: sourceTranslation.description.trim(),
+					content: sourceTranslation.content.trim()
+				},
+				targets
+			});
+
+			response.data.data.translations.forEach(translation => {
+				const index = data.translations.findIndex(
+					item => item.language_id === translation.language_id
+				);
+				const fields = fieldsByLanguageId.get(translation.language_id);
+				if (index < 0 || !fields) return;
+
+				if (fields.includes("title")) {
+					setValue(`translations.${index}.title`, translation.title, {
+						shouldDirty: true,
+						shouldValidate: true
+					});
+				}
+				if (fields.includes("description")) {
+					setValue(
+						`translations.${index}.description`,
+						translation.description,
+						{
+							shouldDirty: true,
+							shouldValidate: true
+						}
+					);
+				}
+				if (fields.includes("content")) {
+					setValue(`translations.${index}.content`, translation.content, {
+						shouldDirty: true,
+						shouldValidate: true
+					});
+					if (index === currentLangIndex) {
+						mdxEditorRef.current?.setMarkdown(translation.content);
+					}
+				}
+			});
+
+			await trigger("translations");
+			toast.success("Missing translations generated");
+			setIsTranslateDialogOpen(false);
+		} catch (error) {
+			toast.error("Failed to generate translations");
+		} finally {
+			setIsTranslating(false);
+		}
+	};
+
+	const onSubmit: SubmitHandler<FormValues> = async data => {
+		syncCurrentEditorContent();
+
 		if (data.translations.length !== languages?.length) {
 			setError("translations", {
 				type: "manual",
@@ -191,6 +421,7 @@ export const NewsForm = () => {
 						render={({ field: { value, onChange } }) => (
 							<LanguageSelection
 								value={value}
+								statusByLanguageId={languageStatuses}
 								onChange={value => {
 									setCurrentLang(
 										languages.find(lang => lang.language_id === value)
@@ -207,7 +438,7 @@ export const NewsForm = () => {
 
 				{fields.map((field, index) => {
 					const langIndex = languages.findIndex(
-						lang => lang.language_id === getValues().currentLangId
+						lang => lang.language_id === currentLangId
 					);
 
 					if (index !== langIndex) return null;
@@ -289,14 +520,70 @@ export const NewsForm = () => {
 					</Typography>
 				)}
 
-				<Button type='submit' disabled={isPending} variant='contained'>
-					{isPending ? (
-						<CircularProgress size={24} color='inherit' />
-					) : (
-						"Create"
+				<Box display='flex' gap='12px'>
+					{hasMissingTranslations && (
+						<Button
+							disabled={isPending || isTranslating}
+							variant='outlined'
+							onClick={handleOpenTranslateDialog}
+						>
+							{isTranslating ? (
+								<CircularProgress size={24} color='inherit' />
+							) : (
+								"AI translate missing"
+							)}
+						</Button>
 					)}
-				</Button>
+					<Button
+						type='submit'
+						disabled={isPending || isTranslating}
+						variant='contained'
+					>
+						{isPending ? (
+							<CircularProgress size={24} color='inherit' />
+						) : (
+							"Create"
+						)}
+					</Button>
+				</Box>
 			</form>
+			<Dialog open={isTranslateDialogOpen} onClose={handleTranslateDialogClose}>
+				<DialogTitle>Which language should be used as the source?</DialogTitle>
+				<DialogContent>
+					<RadioGroup
+						value={selectedSourceLangId ?? ""}
+						onChange={event =>
+							setSelectedSourceLangId(Number(event.target.value))
+						}
+					>
+						{completeSourceLanguages.map(language => (
+							<FormControlLabel
+								key={language.language_id}
+								value={language.language_id}
+								control={<Radio />}
+								label={language.language_code}
+								disabled={isTranslating}
+							/>
+						))}
+					</RadioGroup>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleTranslateDialogClose} disabled={isTranslating}>
+						Cancel
+					</Button>
+					<Button
+						variant='contained'
+						onClick={handleTranslateMissing}
+						disabled={!selectedSourceLangId || isTranslating}
+					>
+						{isTranslating ? (
+							<CircularProgress size={24} color='inherit' />
+						) : (
+							"Generate"
+						)}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	);
 };

@@ -96,6 +96,14 @@ class Model {
 			headers: { "Content-Type": "application/json" }
 		});
 	}
+
+	public async translateMissingDraftByAdmin(
+		data: TranslateMissingNewsDto
+	): Promise<AxiosResponse<TranslateMissingNewsResponse>> {
+		return $api.post("/news/admin/translate-missing", data, {
+			headers: { "Content-Type": "application/json" }
+		});
+	}
 }
 
 export default new Model();
