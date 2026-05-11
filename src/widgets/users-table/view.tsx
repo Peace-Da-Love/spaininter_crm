@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	Avatar,
+	Link,
 	Paper,
 	Skeleton,
 	Table,
@@ -69,7 +70,20 @@ export const UsersTable = () => {
 							<TableRow key={user.id}>
 								<TableCell>{user.id}</TableCell>
 								<TableCell>{user.tg_id}</TableCell>
-								<TableCell>{user.username || emptyValue}</TableCell>
+								<TableCell>
+									{user.username ? (
+										<Link
+											href={`https://t.me/${user.username}`}
+											target='_blank'
+											rel='noopener noreferrer'
+											underline='hover'
+										>
+											{user.username}
+										</Link>
+									) : (
+										emptyValue
+									)}
+								</TableCell>
 								<TableCell>{user.first_name || emptyValue}</TableCell>
 								<TableCell>{user.last_name || emptyValue}</TableCell>
 								<TableCell>
