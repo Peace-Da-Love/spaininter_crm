@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	Avatar,
-	Box,
 	Paper,
 	Skeleton,
 	Table,
@@ -10,8 +9,7 @@ import {
 	TableCell,
 	TableHead,
 	TablePagination,
-	TableRow,
-	Typography
+	TableRow
 } from "@mui/material";
 import { usersModel } from "@/app/models/users-model";
 import { formatDateTime } from "@/shared/utils";
@@ -41,7 +39,7 @@ export const UsersTable = () => {
 
 	const loadingRows = [...Array(limit)].map((_item, index) => (
 		<TableRow key={`Loading user row - ${index}`}>
-			{[...Array(9)].map((_cell, cellIndex) => (
+			{[...Array(8)].map((_cell, cellIndex) => (
 				<TableCell key={`Loading user cell - ${index}-${cellIndex}`}>
 					<Skeleton variant='rounded' width={80} height={20} />
 				</TableCell>
@@ -60,7 +58,6 @@ export const UsersTable = () => {
 						<TableCell>First name</TableCell>
 						<TableCell>Last name</TableCell>
 						<TableCell>Photo</TableCell>
-						<TableCell>Photo URL</TableCell>
 						<TableCell>Created</TableCell>
 						<TableCell>Updated</TableCell>
 					</TableRow>
@@ -81,19 +78,6 @@ export const UsersTable = () => {
 										alt={user.username || user.first_name || "User"}
 										sx={{ width: 36, height: 36 }}
 									/>
-								</TableCell>
-								<TableCell>
-									<Box sx={{ maxWidth: 260 }}>
-										<Typography
-											component='span'
-											variant='body2'
-											noWrap
-											title={user.photo_url || undefined}
-											sx={{ display: "block" }}
-										>
-											{user.photo_url || emptyValue}
-										</Typography>
-									</Box>
 								</TableCell>
 								<TableCell>{formatDateTime(user.createdAt)}</TableCell>
 								<TableCell>{formatDateTime(user.updatedAt)}</TableCell>
