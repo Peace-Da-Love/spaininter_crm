@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const hashtagSchema = z
 	.string()
-	.transform(val => val.trim().toLowerCase())
+	.transform(val => val.trim().toLowerCase().replace(/\s+/g, "_"))
 	.refine(val => /^[a-z0-9_]{2,50}$/.test(val), "Invalid hashtag");
 
 const newsFormSchema = z.object({

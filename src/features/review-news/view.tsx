@@ -8,6 +8,9 @@ import {
 	DialogContent,
 	DialogContentText,
 	DialogTitle,
+	FormControlLabel,
+	Radio,
+	RadioGroup,
 	TextField,
 	Typography
 } from "@mui/material";
@@ -53,7 +56,7 @@ const reviewNewsFormSchema = z
 			.array(
 				z
 					.string()
-					.transform(val => val.trim().toLowerCase())
+					.transform(val => val.trim().toLowerCase().replace(/\s+/g, "_"))
 					.refine(val => /^[a-z0-9_]{2,50}$/.test(val), "Invalid hashtag")
 			)
 			.min(1, "At least one hashtag is required"),
@@ -165,7 +168,12 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 	const [posterLink, setPosterLink] = useState<string>("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+	const [isTranslating, setIsTranslating] = useState(false);
 	const [isApproveConfirmOpen, setIsApproveConfirmOpen] = useState(false);
+	const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
+	const [selectedSourceLangId, setSelectedSourceLangId] = useState<
+		number | null
+	>(null);
 	const [missingLocales, setMissingLocales] = useState<string[]>([]);
 
 	const {
@@ -443,6 +451,187 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 
 	const missingLocalesText = missingLocales.join(", ");
 
+	const completeSourceLanguages = useMemo(() => {
+		return languages.filter(language => {
+			const translation = translations?.find(
+				translation => translation.language_id === language.language_id
+			);
+			const title = (translation?.title ?? "").trim();
+			const description = (translation?.description ?? "").trim();
+			const content = (translation?.content ?? "").trim();
+			return title && description && content;
+		});
+	}, [languages, translations]);
+
+	const getMissingTranslationFields = (translation: {
+		title?: string | null;
+		description?: string | null;
+		content?: string | null;
+	}) => {
+		const fields: Array<"title" | "description" | "content"> = [];
+		if (!(translation.title ?? "").trim()) fields.push("title");
+		if (!(translation.description ?? "").trim()) fields.push("description");
+		if (!(translation.content ?? "").trim()) fields.push("content");
+		return fields;
+	};
+
+	const getTranslationTargets = (data: FormValues, sourceLangId?: number) => {
+		return data.translations
+			.map(translation => {
+				const language = languages.find(
+					language => language.language_id === translation.language_id
+				);
+				return {
+					language_id: translation.language_id,
+					language_code: language?.language_code ?? "",
+					fields: getMissingTranslationFields(translation)
+				};
+			})
+			.filter(
+				target =>
+					target.language_id !== sourceLangId &&
+					target.language_code &&
+					target.fields.length > 0
+			);
+	};
+
+	const syncCurrentEditorContent = () => {
+		if (currentLangIndex < 0) return;
+		const markdown = mdxEditorRef.current?.getMarkdown();
+		const currentValue = getValues(`translations.${currentLangIndex}.content`);
+		if (typeof markdown === "string" && markdown !== (currentValue ?? "")) {
+			setValue(`translations.${currentLangIndex}.content`, markdown, {
+				shouldDirty: true
+			});
+		}
+	};
+
+	const handleOpenTranslateDialog = () => {
+		syncCurrentEditorContent();
+		const data = getValues() as FormValues;
+		const sources = languages.filter(language => {
+			const translation = data.translations.find(
+				translation => translation.language_id === language.language_id
+			);
+			if (!translation) return false;
+			return getMissingTranslationFields(translation).length === 0;
+		});
+
+		if (sources.length === 0) {
+			toast.error("Add at least one complete translation first");
+			return;
+		}
+
+		const targets = getTranslationTargets(data);
+		if (targets.length === 0) {
+			toast.success("There are no empty translation fields");
+			return;
+		}
+
+		const currentIsComplete = sources.some(
+			source => source.language_id === currentLangId
+		);
+		setSelectedSourceLangId(
+			currentIsComplete ? currentLangId : sources[0].language_id
+		);
+		setIsTranslateDialogOpen(true);
+	};
+
+	const handleTranslateDialogClose = () => {
+		if (isTranslating) return;
+		setIsTranslateDialogOpen(false);
+	};
+
+	const handleTranslateMissing = async () => {
+		if (!selectedSourceLangId) return;
+
+		syncCurrentEditorContent();
+		const data = getValues() as FormValues;
+		const sourceLanguage = languages.find(
+			language => language.language_id === selectedSourceLangId
+		);
+		const sourceTranslation = data.translations.find(
+			translation => translation.language_id === selectedSourceLangId
+		);
+
+		if (!sourceLanguage || !sourceTranslation) {
+			toast.error("Selected source language was not found");
+			return;
+		}
+
+		if (getMissingTranslationFields(sourceTranslation).length > 0) {
+			toast.error("Selected source language must be complete");
+			return;
+		}
+
+		const targets = getTranslationTargets(data, selectedSourceLangId);
+		if (targets.length === 0) {
+			toast.success("There are no empty translation fields");
+			setIsTranslateDialogOpen(false);
+			return;
+		}
+
+		const fieldsByLanguageId = new Map(
+			targets.map(target => [target.language_id, target.fields])
+		);
+
+		setIsTranslating(true);
+		try {
+			const response = await newsModel.translateMissingByAdmin(newsId, {
+				source: {
+					language_id: sourceLanguage.language_id,
+					language_code: sourceLanguage.language_code,
+					title: (sourceTranslation.title ?? "").trim(),
+					description: (sourceTranslation.description ?? "").trim(),
+					content: (sourceTranslation.content ?? "").trim()
+				},
+				targets
+			});
+
+			response.data.data.translations.forEach(translation => {
+				const index = data.translations.findIndex(
+					item => item.language_id === translation.language_id
+				);
+				const fields = fieldsByLanguageId.get(translation.language_id);
+				if (index < 0 || !fields) return;
+
+				if (fields.includes("title")) {
+					setValue(`translations.${index}.title`, translation.title, {
+						shouldDirty: true,
+						shouldValidate: true
+					});
+				}
+				if (fields.includes("description")) {
+					setValue(
+						`translations.${index}.description`,
+						translation.description,
+						{
+							shouldDirty: true,
+							shouldValidate: true
+						}
+					);
+				}
+				if (fields.includes("content")) {
+					setValue(`translations.${index}.content`, translation.content, {
+						shouldDirty: true,
+						shouldValidate: true
+					});
+					if (index === currentLangIndex) {
+						mdxEditorRef.current?.setMarkdown(translation.content);
+					}
+				}
+			});
+
+			await trigger("translations");
+			toast.success("Missing translations generated");
+			setIsTranslateDialogOpen(false);
+		} catch (error) {
+			toast.error("Failed to generate translations");
+		} finally {
+			setIsTranslating(false);
+		}
+	};
+
 	if (isLoading) return <CircularProgress />;
 	if (isError) return <div>Error...</div>;
 
@@ -639,8 +828,19 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 
 				<Box display='flex' gap={pxToRem(12)}>
 					<Button
+						disabled={isSaving || isUpdatingStatus || isTranslating}
+						variant='outlined'
+						onClick={handleOpenTranslateDialog}
+					>
+						{isTranslating ? (
+							<CircularProgress size={24} color='inherit' />
+						) : (
+							"AI translate missing"
+						)}
+					</Button>
+					<Button
 						type='submit'
-						disabled={isSaving || isUpdatingStatus}
+						disabled={isSaving || isUpdatingStatus || isTranslating}
 						variant='contained'
 					>
 						{isSaving ? (
@@ -650,7 +850,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 						)}
 					</Button>
 					<Button
-						disabled={isSaving || isUpdatingStatus}
+						disabled={isSaving || isUpdatingStatus || isTranslating}
 						variant='outlined'
 						color='success'
 						onClick={handleApprove}
@@ -662,7 +862,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 						)}
 					</Button>
 					<Button
-						disabled={isSaving || isUpdatingStatus}
+						disabled={isSaving || isUpdatingStatus || isTranslating}
 						variant='outlined'
 						color='error'
 						onClick={handleReject}
@@ -693,6 +893,46 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 						disabled={isSaving || isUpdatingStatus}
 					>
 						Опубликовать
+					</Button>
+				</DialogActions>
+			</Dialog>
+			<Dialog
+				open={isTranslateDialogOpen}
+				onClose={handleTranslateDialogClose}
+			>
+				<DialogTitle>Какой язык брать за основу?</DialogTitle>
+				<DialogContent>
+					<RadioGroup
+						value={selectedSourceLangId ?? ""}
+						onChange={event =>
+							setSelectedSourceLangId(Number(event.target.value))
+						}
+					>
+						{completeSourceLanguages.map(language => (
+							<FormControlLabel
+								key={language.language_id}
+								value={language.language_id}
+								control={<Radio />}
+								label={language.language_code}
+								disabled={isTranslating}
+							/>
+						))}
+					</RadioGroup>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleTranslateDialogClose} disabled={isTranslating}>
+						Отмена
+					</Button>
+					<Button
+						variant='contained'
+						onClick={handleTranslateMissing}
+						disabled={!selectedSourceLangId || isTranslating}
+					>
+						{isTranslating ? (
+							<CircularProgress size={24} color='inherit' />
+						) : (
+							"Заполнить"
+						)}
 					</Button>
 				</DialogActions>
 			</Dialog>

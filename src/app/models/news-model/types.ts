@@ -64,6 +64,29 @@ export interface UpdateAdminNewsDto {
 	translations: AdminNewsTranslation[];
 }
 
+export type TranslateNewsField = "title" | "description" | "content";
+
+export interface TranslateMissingNewsDto {
+	source: {
+		language_id: number;
+		language_code: string;
+		title: string;
+		description: string;
+		content: string;
+	};
+	targets: {
+		language_id: number;
+		language_code: string;
+		fields: TranslateNewsField[];
+	}[];
+}
+
+export interface TranslateMissingNewsResponse extends IResponse {
+	data: {
+		translations: AdminNewsTranslation[];
+	};
+}
+
 export type NewsHashtag = {
 	hashtagId: number;
 	hashtagName: string;

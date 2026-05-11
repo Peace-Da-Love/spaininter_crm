@@ -9,6 +9,7 @@ export interface GetHashtagsResponse extends IResponse {
 export interface Hashtag {
 	hashtag_id: number;
 	hashtag_name: string;
+	news_count: number;
 	createdAt: string;
 }
 

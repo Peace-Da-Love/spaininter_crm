@@ -20,7 +20,8 @@ type Props = {
 };
 
 const HASHTAG_REGEX = /^[a-z0-9_]{2,50}$/;
-const normalizeHashtag = (value: string) => value.trim().toLowerCase();
+const normalizeHashtag = (value: string) =>
+	value.trim().toLowerCase().replace(/\s+/g, "_");
 
 export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 	({ error, helperText, value = [], onChange, label = "Hashtags" }, ref) => {
@@ -31,7 +32,16 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 			queryFn: () => hashtagsModel.getHashtags()
 		});
 
-		const hashtags = data?.data.data.hashtags || [];
+		const hashtags = useMemo(() => data?.data.data.hashtags || [], [data]);
+
+		const hashtagUsageByName = useMemo(() => {
+			return new Map(
+				hashtags.map(tag => [
+					normalizeHashtag(tag.hashtag_name),
+					Number(tag.news_count ?? 0)
+				])
+			);
+		}, [hashtags]);
 
 		const filteredOptions = useMemo(() => {
 			const selected = new Set(value.map(normalizeHashtag));
@@ -73,7 +83,7 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 					value={value}
 					inputValue={inputValue}
 					onInputChange={(_event: SyntheticEvent, newInputValue: string) => {
-						setInputValue(newInputValue);
+						setInputValue(normalizeHashtag(newInputValue));
 					}}
 					onChange={(_event: SyntheticEvent, newValue: string[]) => {
 						const normalized = Array.from(
@@ -94,6 +104,35 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 							/>
 						))
 					}
+					renderOption={(props, option) => {
+						const usageCount =
+							hashtagUsageByName.get(normalizeHashtag(option)) ?? 0;
+
+						return (
+							<li {...props}>
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+										gap: 2,
+										width: "100%"
+									}}
+								>
+									<Typography component='span' variant='body2'>
+										{option}
+									</Typography>
+									<Typography
+										component='span'
+										variant='caption'
+										color='text.secondary'
+									>
+										{usageCount}
+									</Typography>
+								</Box>
+							</li>
+						);
+					}}
 					renderInput={(params: AutocompleteRenderInputParams) => (
 						<TextField
 							{...params}
@@ -103,7 +142,7 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 							helperText={
 								error
 									? helperText
-									: "Type hashtag names or select several from the list"
+									: "Type hashtag names or select several from the list. Spaces become underscores"
 							}
 							InputProps={{
 								...params.InputProps,

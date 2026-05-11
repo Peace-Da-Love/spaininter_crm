@@ -6,7 +6,9 @@ import {
 	UpdateNewsDto,
 	UpdateTranslationDto,
 	UpdateAdminNewsDto,
-	UpdateNewsStatusDto
+	UpdateNewsStatusDto,
+	TranslateMissingNewsDto,
+	TranslateMissingNewsResponse
 } from "./types.ts";
 import { AxiosResponse } from "axios";
 
@@ -82,6 +84,15 @@ class Model {
 		status: UpdateNewsStatusDto
 	): Promise<AxiosResponse<IResponse>> {
 		return $api.patch(`/news/${newsId}/status`, status, {
+			headers: { "Content-Type": "application/json" }
+		});
+	}
+
+	public async translateMissingByAdmin(
+		newsId: number,
+		data: TranslateMissingNewsDto
+	): Promise<AxiosResponse<TranslateMissingNewsResponse>> {
+		return $api.post(`/news/admin/${newsId}/translate-missing`, data, {
 			headers: { "Content-Type": "application/json" }
 		});
 	}
