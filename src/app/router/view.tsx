@@ -15,6 +15,7 @@ import { EditHashtagPage } from "@/pages/edit-hashtag";
 import { EditNewsPage } from "@/pages/edit-news";
 import { ReviewNewsPage } from "@/pages/review-news";
 import { ChannelsPage } from "@/pages/channels";
+import { UsersPage } from "@/pages/users";
 
 export const Router = () => {
 	return (
@@ -30,6 +31,7 @@ export const Router = () => {
 							<Route path={"/create-news"} element={<CreateNewsPage />} />
 							<Route path={"/admins"} element={<AdminsPage />} />
 							<Route path={"/hashtags"} element={<HashtagsPage />} />
+							<Route path={"/users"} element={<UsersPage />} />
 							<Route
 								path={"/create-hashtag"}
 								element={<CreateHashtagPage />}
