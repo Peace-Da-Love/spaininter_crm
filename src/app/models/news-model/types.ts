@@ -61,7 +61,7 @@ export interface UpdateAdminNewsDto {
 	province?: string;
 	city?: string;
 	ad_link?: string | null;
-	translations: AdminNewsTranslation[];
+	translations?: AdminNewsTranslation[];
 }
 
 export type TranslateNewsField = "title" | "description" | "content";

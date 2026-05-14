@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { Loading } from "./loading.tsx";
 import { PhotoChangeDialog } from "./ui/photo-change-dialog";
 import EditIcon from "@mui/icons-material/Edit";
+import { HashtagAutocomplete } from "@/features/hashtag-autocomplete";
 
 type Props = {
 	newsId: number;
@@ -35,6 +36,18 @@ type AllLanguagesData = {
 	[languageId: number]: FormData;
 };
 
+const normalizeHashtag = (value: string) =>
+	value.trim().toLowerCase().replace(/\s+/g, "_");
+
+const normalizeHashtags = (values: string[]) =>
+	Array.from(new Set(values.map(normalizeHashtag).filter(Boolean)));
+
+const areHashtagsEqual = (left: string[], right: string[]) => {
+	const sortedLeft = normalizeHashtags(left).sort();
+	const sortedRight = normalizeHashtags(right).sort();
+	return JSON.stringify(sortedLeft) === JSON.stringify(sortedRight);
+};
+
 export const EditNews: FC<Props> = ({ newsId }) => {
 	const toast = useToast();
 	const navigate = useNavigate();
@@ -44,6 +57,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 	const [changedLanguages, setChangedLanguages] = useState<Set<number>>(new Set());
 	const [originalData, setOriginalData] = useState<AllLanguagesData>({});
 	const [posterLink, setPosterLink] = useState<string>(""); // Only for display
+	const [hashtagNames, setHashtagNames] = useState<string[]>([]);
+	const [originalHashtagNames, setOriginalHashtagNames] = useState<string[]>([]);
 	const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
 	const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState<boolean>(false);
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
@@ -76,6 +91,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			// Collect data for all languages
 			const allData: AllLanguagesData = {};
 			let nextPosterLink = "";
+			let nextHashtagNames: string[] = [];
 			languages.forEach((lang, index) => {
 				const news = results[index]?.data?.data?.news;
 				if (!news) {
@@ -93,6 +109,11 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				if (!nextPosterLink && news.posterLink) {
 					nextPosterLink = news.posterLink;
 				}
+				if (nextHashtagNames.length === 0) {
+					nextHashtagNames =
+						news.hashtags?.map(hashtag => hashtag.hashtagName) ??
+						(news.hashtagName ? [news.hashtagName] : []);
+				}
 			});
 			
 			// Set poster link once (it's the same for all languages)
@@ -102,6 +123,8 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 			
 			setAllLanguagesData(allData);
 			setOriginalData(allData);
+			setHashtagNames(normalizeHashtags(nextHashtagNames));
+			setOriginalHashtagNames(normalizeHashtags(nextHashtagNames));
 			
 			// Set the first language as the current language
 			if (languages[0] && !currentLang) {
@@ -202,6 +225,7 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 
 	
 	const [isUpdating, setIsUpdating] = useState(false);
+	const hasHashtagChanges = !areHashtagsEqual(hashtagNames, originalHashtagNames);
 
 	const isTranslationEmpty = (data?: FormData | null) => {
 		const title = (data?.title ?? "").trim();
@@ -251,8 +275,13 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 		const hasLanguageChanges = changedLanguages.size > 0;
 		const hasPhotoFile = selectedPhotoFile !== null;
 
-		if (!hasLanguageChanges && !hasPhotoFile) {
+		if (!hasLanguageChanges && !hasPhotoFile && !hasHashtagChanges) {
 			toast.info("No changes detected");
+			return;
+		}
+
+		if (hasHashtagChanges && hashtagNames.length === 0) {
+			toast.error("Add at least one hashtag");
 			return;
 		}
 
@@ -288,6 +317,12 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				const formData = new globalThis.FormData();
 				formData.append("photo", selectedPhotoFile);
 				await newsModel.updatePhoto(newsId, formData);
+			}
+
+			if (hasHashtagChanges) {
+				await newsModel.updateByAdmin(newsId, {
+					hashtag_names: normalizeHashtags(hashtagNames)
+				});
 			}
 
 			// 2. Then update translations (if there are changes)
@@ -398,12 +433,29 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 				</Box>
 			)}
 
+			{!isLoading && !isError && (
+				<Box mb={3} maxWidth={600}>
+					<HashtagAutocomplete
+						value={hashtagNames}
+						onChange={setHashtagNames}
+						error={hasHashtagChanges && hashtagNames.length === 0}
+						helperText='At least one hashtag is required'
+					/>
+				</Box>
+			)}
+
 			{/* Show change indicators */}
-			{changedLanguages.size > 0 && (
+			{(changedLanguages.size > 0 || hasHashtagChanges) && (
 				<Alert severity="info" sx={{ mb: 2 }}>
-					Modified languages: {Array.from(changedLanguages).map(langId => 
-						languages.find(l => l.language_id === langId)?.language_code
-					).join(", ")}
+					{changedLanguages.size > 0 && (
+						<>
+							Modified languages: {Array.from(changedLanguages).map(langId => 
+								languages.find(l => l.language_id === langId)?.language_code
+							).join(", ")}
+						</>
+					)}
+					{changedLanguages.size > 0 && hasHashtagChanges && "; "}
+					{hasHashtagChanges && "Modified hashtags"}
 				</Alert>
 			)}
 
@@ -498,16 +550,17 @@ export const EditNews: FC<Props> = ({ newsId }) => {
 								{isUpdating ? (
 									<CircularProgress size={24} color='inherit' />
 								) : (
-									`Save Changes (${changedLanguages.size} language${changedLanguages.size !== 1 ? 's' : ''}${selectedPhotoFile ? ', photo' : ''})`
+									`Save Changes (${changedLanguages.size} language${changedLanguages.size !== 1 ? 's' : ''}${hasHashtagChanges ? ', hashtags' : ''}${selectedPhotoFile ? ', photo' : ''})`
 								)}
 							</Button>
 
 							<Button 
-								disabled={isUpdating || (changedLanguages.size === 0 && !selectedPhotoFile)}
+								disabled={isUpdating || (changedLanguages.size === 0 && !selectedPhotoFile && !hasHashtagChanges)}
 								variant='outlined' 
 								onClick={() => {
 									setAllLanguagesData(originalData);
 									setChangedLanguages(new Set());
+									setHashtagNames(originalHashtagNames);
 									setSelectedPhotoFile(null);
 									if (currentLang && originalData[currentLang]) {
 										const originalLangData = originalData[currentLang];
