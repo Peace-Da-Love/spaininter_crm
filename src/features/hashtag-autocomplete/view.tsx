@@ -45,22 +45,26 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 
 		const filteredOptions = useMemo(() => {
 			const selected = new Set(value.map(normalizeHashtag));
-			const lowerInput = normalizeHashtag(inputValue);
+			const normalizedInput = normalizeHashtag(inputValue);
 
 			const filtered = hashtags
 				.map(tag => tag.hashtag_name)
 				.filter(name => !selected.has(normalizeHashtag(name)))
 				.filter(
-					name => !lowerInput || name.toLowerCase().startsWith(lowerInput)
+					name =>
+						!normalizedInput ||
+						normalizeHashtag(name).startsWith(normalizedInput)
 				);
 
 			if (
-				lowerInput &&
-				HASHTAG_REGEX.test(lowerInput) &&
-				!selected.has(lowerInput) &&
-				!hashtags.some(tag => normalizeHashtag(tag.hashtag_name) === lowerInput)
+				normalizedInput &&
+				HASHTAG_REGEX.test(normalizedInput) &&
+				!selected.has(normalizedInput) &&
+				!hashtags.some(
+					tag => normalizeHashtag(tag.hashtag_name) === normalizedInput
+				)
 			) {
-				return [lowerInput, ...filtered];
+				return [normalizedInput, ...filtered];
 			}
 
 			return filtered;
@@ -83,7 +87,7 @@ export const HashtagAutocomplete = forwardRef<HTMLDivElement, Props>(
 					value={value}
 					inputValue={inputValue}
 					onInputChange={(_event: SyntheticEvent, newInputValue: string) => {
-						setInputValue(normalizeHashtag(newInputValue));
+						setInputValue(newInputValue);
 					}}
 					onChange={(_event: SyntheticEvent, newValue: string[]) => {
 						const normalized = Array.from(

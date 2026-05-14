@@ -42,6 +42,12 @@ type Props = {
 	newsId: number;
 };
 
+const normalizeHashtag = (value: string) =>
+	value.trim().toLowerCase().replace(/\s+/g, "_");
+
+const normalizeHashtags = (values: string[]) =>
+	Array.from(new Set(values.map(normalizeHashtag).filter(Boolean)));
+
 const reviewNewsFormSchema = z
 	.object({
 		currentLangId: z.number(),
@@ -320,7 +326,7 @@ export const ReviewNews: FC<Props> = ({ newsId }) => {
 			}
 
 			const payload = {
-				hashtag_names: data.hashtag_names,
+				hashtag_names: normalizeHashtags(data.hashtag_names),
 				poster_link: posterUrl,
 				province: data.province ?? undefined,
 				city: data.city ?? undefined,
