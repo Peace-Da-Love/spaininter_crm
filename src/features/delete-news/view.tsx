@@ -13,6 +13,7 @@ import { FC, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteModel, DeleteParams } from "./model.ts";
 import { useToast } from "@/shared/hooks";
+import { useUserStore } from "@/app/store";
 
 type Props = {
 	newsId: number;
@@ -22,6 +23,7 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 	const queryClient = useQueryClient();
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const toast = useToast();
+	const role = useUserStore(state => state.user.role);
 	const { mutate, isPending } = useMutation({
 		mutationKey: ["delete-news"],
 		mutationFn: (dto: DeleteParams) => deleteModel(dto),
@@ -46,6 +48,8 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 		const dto: DeleteParams = { news_id: newsId };
 		mutate(dto);
 	};
+
+	if (role !== "superadmin") return null;
 
 	return (
 		<>
