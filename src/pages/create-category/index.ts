@@ -1,1 +1,0 @@
-export { CreateCategoryPage } from "./view";

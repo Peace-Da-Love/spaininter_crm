@@ -1,20 +1,20 @@
-import { Typography } from "@mui/material";
-import { NewsTable } from "@/widgets/news-table";
-import { pxToRem } from "@/shared/css-utils";
-import { Helmet } from "react-helmet-async";
 import { Fragment } from "react";
+import { Helmet } from "react-helmet-async";
+import { Typography } from "@mui/material";
+import { pxToRem } from "@/shared/css-utils";
+import { UsersTable } from "@/widgets/users-table";
 
-export const NewsPage = () => {
+export const UsersPage = () => {
 	return (
 		<Fragment>
 			<Helmet>
-				<title>SpainInter CRM - News</title>
+				<title>SpainInter CRM - Users</title>
 			</Helmet>
 			<section>
 				<Typography variant='h1' mb={pxToRem(20)}>
-					News
+					Users
 				</Typography>
-				<NewsTable />
+				<UsersTable />
 			</section>
 		</Fragment>
 	);

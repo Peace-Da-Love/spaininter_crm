@@ -8,14 +8,16 @@ export interface IGetNewsParams {
 interface NewsItem {
 	newsId: number;
 	posterLink: string;
+	province?: string;
 	city: string;
 	title: string;
 	description: string;
 	content: string;
 	link: string;
-	categoryId: number;
-	categoryName: string;
-	categoryLink: string;
+	hashtagId: number;
+	hashtagName: string;
+	hashtagLink: string;
+	hashtags?: NewsHashtag[];
 	views: number;
 	adLink: string | null;
 	createdAt: string;
@@ -42,4 +44,55 @@ export interface UpdateTranslationDto {
 	description?: string;
 	content?: string;
 	adLink?: string | null;
+}
+
+export type AdminNewsTranslation = {
+	language_id: number;
+	title: string;
+	description: string;
+	content: string;
+};
+
+export interface UpdateAdminNewsDto {
+	hashtag_id?: number;
+	hashtag_name?: string;
+	hashtag_names?: string[];
+	poster_link?: string;
+	province?: string;
+	city?: string;
+	ad_link?: string | null;
+	translations?: AdminNewsTranslation[];
+}
+
+export type TranslateNewsField = "title" | "description" | "content";
+
+export interface TranslateMissingNewsDto {
+	source: {
+		language_id: number;
+		language_code: string;
+		title: string;
+		description: string;
+		content: string;
+	};
+	targets: {
+		language_id: number;
+		language_code: string;
+		fields: TranslateNewsField[];
+	}[];
+}
+
+export interface TranslateMissingNewsResponse extends IResponse {
+	data: {
+		translations: AdminNewsTranslation[];
+	};
+}
+
+export type NewsHashtag = {
+	hashtagId: number;
+	hashtagName: string;
+	hashtagLink: string;
+};
+
+export interface UpdateNewsStatusDto {
+	status: "pending" | "approved" | "rejected";
 }

@@ -1,3 +1,7 @@
+import { hashtagsModel } from "@/app/models/hashtags-model";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { FC, Fragment, useState } from "react";
+import { useToast } from "@/shared/hooks";
 import {
 	Button,
 	ButtonBase,
@@ -9,33 +13,28 @@ import {
 	DialogTitle
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { FC, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteModel, DeleteParams } from "./model.ts";
-import { useToast } from "@/shared/hooks";
-import { useUserStore } from "@/app/store";
 
 type Props = {
-	newsId: number;
+	hashtagId: number;
 };
 
-export const DeleteNews: FC<Props> = ({ newsId }) => {
+export const DeleteHashtag: FC<Props> = ({ hashtagId }) => {
 	const queryClient = useQueryClient();
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const toast = useToast();
-	const role = useUserStore(state => state.user.role);
 	const { mutate, isPending } = useMutation({
-		mutationKey: ["delete-news"],
-		mutationFn: (dto: DeleteParams) => deleteModel(dto),
+		mutationKey: ["delete-hashtag-admin-key"],
+		mutationFn: (id: number) =>
+			hashtagsModel.deleteHashtag(id),
 		onSuccess: async () => {
 			setIsOpen(false);
-			toast.success("News deleted successfully");
+			toast.success("Hashtag deleted successfully");
 		},
 		onError: () => {
-			toast.error("Failed to delete news");
+			toast.error("Failed to delete hashtag");
 		},
 		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ["news-key"] });
+			queryClient.invalidateQueries({ queryKey: ["get-hashtags-table-key"] });
 		}
 	});
 
@@ -45,28 +44,24 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 		setIsOpen(false);
 	};
 	const handleDelete = () => {
-		const dto: DeleteParams = { news_id: newsId };
-		mutate(dto);
+		mutate(hashtagId);
 	};
 
-	if (role !== "superadmin") return null;
-
 	return (
-		<>
+		<Fragment>
 			<ButtonBase
-				title='Delete news'
+				title='Delete hashtag'
 				onClick={handleOpen}
 				sx={{ color: "#FF6B6B" }}
 			>
 				<DeleteIcon />
 			</ButtonBase>
 			<Dialog open={isOpen} onClose={handleClose}>
-				<DialogTitle id='alert-dialog-title'>
-					Delete news from ID {newsId}?
-				</DialogTitle>
+				<DialogTitle>Delete hashtag from ID {hashtagId}?</DialogTitle>
 				<DialogContent>
-					<DialogContentText id='alert-dialog-description'>
-						If you delete the news from the database, it will be lost forever.
+					<DialogContentText>
+						If you delete the hashtag from the database, it will be lost
+						forever.
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
@@ -74,8 +69,8 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 						Cancel
 					</Button>
 					<Button
-						disabled={isPending}
 						sx={{ color: "#FF6B6B" }}
+						disabled={isPending}
 						onClick={handleDelete}
 						autoFocus
 					>
@@ -83,6 +78,6 @@ export const DeleteNews: FC<Props> = ({ newsId }) => {
 					</Button>
 				</DialogActions>
 			</Dialog>
-		</>
+		</Fragment>
 	);
 };

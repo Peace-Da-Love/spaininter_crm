@@ -9,11 +9,13 @@ import { NewsPage } from "@/pages/news";
 import { CreateNewsPage } from "@/pages/create-news";
 import { AdminsPage } from "@/pages/admins";
 import { NotFoundPage } from "@/pages/not-found";
-import { CategoriesPage } from "src/pages/categories";
-import { CreateCategoryPage } from "@/pages/create-category";
-import { EditCategoryPage } from "@/pages/edit-category";
+import { HashtagsPage } from "src/pages/hashtags";
+import { CreateHashtagPage } from "@/pages/create-hashtag";
+import { EditHashtagPage } from "@/pages/edit-hashtag";
 import { EditNewsPage } from "@/pages/edit-news";
+import { ReviewNewsPage } from "@/pages/review-news";
 import { ChannelsPage } from "@/pages/channels";
+import { UsersPage } from "@/pages/users";
 
 export const Router = () => {
 	return (
@@ -25,14 +27,16 @@ export const Router = () => {
 							<Route path={"/"} element={<HomePage />} />
 							<Route path={"/news"} element={<NewsPage />} />
 							<Route path={"/news/:id"} element={<EditNewsPage />} />
+							<Route path={"/news/review/:id"} element={<ReviewNewsPage />} />
 							<Route path={"/create-news"} element={<CreateNewsPage />} />
 							<Route path={"/admins"} element={<AdminsPage />} />
-							<Route path={"/categories"} element={<CategoriesPage />} />
+							<Route path={"/hashtags"} element={<HashtagsPage />} />
+							<Route path={"/users"} element={<UsersPage />} />
 							<Route
-								path={"/create-category"}
-								element={<CreateCategoryPage />}
+								path={"/create-hashtag"}
+								element={<CreateHashtagPage />}
 							/>
-							<Route path={"/category/:id"} element={<EditCategoryPage />} />
+							<Route path={"/hashtag/:id"} element={<EditHashtagPage />} />
 							<Route path={"/channels"} element={<ChannelsPage />} />
 						</Route>
 					</Route>

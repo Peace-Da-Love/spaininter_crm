@@ -10,10 +10,14 @@ interface INewsResponse extends IResponse {
 				news_id: number;
 				createdAt: string;
 				views: number;
+				status: "pending" | "approved" | "rejected";
+				user_id: number | null;
+				admin_id: number | null;
 				newsTranslations: [
 					{
 						title: string;
 						link: string;
+						language_id: number;
 					}
 				];
 			}

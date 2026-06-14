@@ -5,13 +5,18 @@ export const navigation = [
 		secure: false
 	},
 	{
-		link: "/categories",
-		title: "Categories",
+		link: "/hashtags",
+		title: "Hashtags",
 		secure: false
 	},
 	{
 		link: "/channels",
 		title: "Channels",
+		secure: false
+	},
+	{
+		link: "/users",
+		title: "Users",
 		secure: false
 	},
 	{
