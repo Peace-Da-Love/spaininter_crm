@@ -16,6 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 import { INews } from "@/app/types";
 import { newsModel } from "@/app/models/news-model";
 import { useToast } from "@/shared/hooks";
+import { pollTranslationJob } from "@/shared/utils";
 import { useNavigate } from "react-router-dom";
 import {
 	Controller,
@@ -260,7 +261,10 @@ export const NewsForm = () => {
 				targets
 			});
 
-			response.data.data.translations.forEach(translation => {
+			const { translations, errors: translationErrors } =
+				await pollTranslationJob(response.data.data.job_id);
+
+			translations.forEach(translation => {
 				const index = data.translations.findIndex(
 					item => item.language_id === translation.language_id
 				);
@@ -295,10 +299,23 @@ export const NewsForm = () => {
 			});
 
 			await trigger("translations");
-			toast.success("Missing translations generated");
+
+			/* Часть языков могла упасть — показываем то, что перевелось */
+			if (translationErrors.length > 0) {
+				toast.error(
+					`Some translations failed (${translationErrors.length}). Check the empty fields.`
+				);
+			} else {
+				toast.success("Missing translations generated");
+			}
+
 			setIsTranslateDialogOpen(false);
 		} catch (error) {
-			toast.error("Failed to generate translations");
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to generate translations"
+			);
 		} finally {
 			setIsTranslating(false);
 		}

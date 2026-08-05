@@ -8,7 +8,8 @@ import {
 	UpdateAdminNewsDto,
 	UpdateNewsStatusDto,
 	TranslateMissingNewsDto,
-	TranslateMissingNewsResponse
+	TranslateMissingNewsResponse,
+	TranslationJobResponse
 } from "./types.ts";
 import { AxiosResponse } from "axios";
 
@@ -103,6 +104,12 @@ class Model {
 		return $api.post("/news/admin/translate-missing", data, {
 			headers: { "Content-Type": "application/json" }
 		});
+	}
+
+	public async getTranslationJob(
+		jobId: string
+	): Promise<AxiosResponse<TranslationJobResponse>> {
+		return $api.get(`/news/admin/translate-jobs/${jobId}`);
 	}
 }
 

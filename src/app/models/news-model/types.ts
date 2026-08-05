@@ -81,9 +81,26 @@ export interface TranslateMissingNewsDto {
 	}[];
 }
 
+export type TranslationJobStatus =
+	| "pending"
+	| "running"
+	| "completed"
+	| "failed";
+
+/** Ответ на постановку задачи: переводы приходят позже, опросом по job_id. */
 export interface TranslateMissingNewsResponse extends IResponse {
 	data: {
+		job_id: string;
+		status: TranslationJobStatus;
+	};
+}
+
+export interface TranslationJobResponse extends IResponse {
+	data: {
+		job_id: string;
+		status: TranslationJobStatus;
 		translations: AdminNewsTranslation[];
+		errors: string[];
 	};
 }
 
